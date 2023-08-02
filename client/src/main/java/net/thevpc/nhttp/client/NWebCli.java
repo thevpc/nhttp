@@ -5,6 +5,7 @@ import net.thevpc.nuts.util.NAssert;
 import net.thevpc.nuts.util.NIOUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -99,7 +100,7 @@ public class NWebCli {
                     }
                 }
             }
-            if (sb.length() < 0) {
+            if (sb.length() > 0) {
                 if (u.indexOf("?") >= 0) {
                     u.append("&").append(sb);
                 } else {
@@ -145,27 +146,23 @@ public class NWebCli {
                     }
                 }
                 uc.setRequestMethod(method.toString());
-                if (r.getAuthorizationBearer() != null) {
-                    String basicAuth = "Bearer " + r.getAuthorizationBearer();
-                    uc.setRequestProperty("Authorization", basicAuth);
-                }
-                if (r.getContentType() != null) {
-                    uc.setRequestProperty("Content-Type", r.getContentType());
-                }
-                if (r.getContentLanguage() != null) {
-                    uc.setRequestProperty("Content-Language", r.getContentLanguage());
-                }
                 uc.setUseCaches(false);
-                uc.setDoInput(true);
-                uc.setDoOutput(false);
-                byte[] requestBody = r.getBody();
-                if (requestBody != null && requestBody.length > 0) {
-                    uc.setRequestProperty("Content-Length", "" + requestBody.length);
-                    uc.getOutputStream().write(requestBody);
+
+                NWebData requestBody = r.getBody();
+                long bodyLength = requestBody == null ? -1 : requestBody.length();
+                boolean someBody = requestBody != null && bodyLength > 0;
+
+                uc.setDoInput(!r.isOneWay());
+                uc.setDoOutput(someBody);
+                if (someBody) {
+                    uc.setRequestProperty("Content-Length", String.valueOf(bodyLength));
+                    requestBody.writeTo(uc.getOutputStream());
                 }
-                byte[] bytes = null;
+                NWebData bytes = null;
                 if (!r.isOneWay()) {
-                    bytes = NIOUtils.readBytes(uc.getInputStream());
+                    try(InputStream in=uc.getInputStream()) {
+                        bytes = NWebData.of(NIOUtils.readBytes(in));
+                    }
                 }
                 NWebResponse httpResponse = new NWebResponse(
                         uc.getResponseCode(),

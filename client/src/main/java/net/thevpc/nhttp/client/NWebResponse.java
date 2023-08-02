@@ -2,8 +2,7 @@ package net.thevpc.nhttp.client;
 
 import com.google.gson.Gson;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.List;
 import java.util.Map;
 
@@ -11,10 +10,10 @@ public class NWebResponse {
     private int code;
     private String msg;
     private Map<String, List<String>> headers;
-    private byte[] content;
+    private NWebData content;
     private String userMessage;
 
-    public NWebResponse(int code, String msg, Map<String, List<String>> headers, byte[] content) {
+    public NWebResponse(int code, String msg, Map<String, List<String>> headers, NWebData content) {
         this.code = code;
         this.msg = msg;
         this.headers = headers;
@@ -33,15 +32,27 @@ public class NWebResponse {
         return headers;
     }
 
-    public byte[] getContent() {
+    public NWebData getContent() {
         return content;
+    }
+
+    public <K,V> Map<K, V> getContentMapAsJson() {
+        return getContentAsJson(Map.class);
+    }
+
+    public <T> List<T> getContentArrayAsJson() {
+        return getContentAsJson(List.class);
     }
 
     public <T> T getContentAsJson(Class<T> clz) {
         if (content == null) {
             return null;
         }
-        return new Gson().fromJson(new InputStreamReader(new ByteArrayInputStream(content)), clz);
+        try (InputStream in = content.stream()) {
+            return new Gson().fromJson(new InputStreamReader(in), clz);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
     }
 
     public boolean isError() {
@@ -69,7 +80,7 @@ public class NWebResponse {
             List<String> list = headers.get("Content-Type");
             if (list != null) {
                 for (String s : list) {
-                    if (s != null && s.length() > 0) {
+                    if (s != null && !s.isEmpty()) {
                         return s;
                     }
                 }

@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import net.thevpc.nhttp.commons.HttpMethod;
 import net.thevpc.nuts.cmdline.NArg;
 import net.thevpc.nuts.io.NPath;
+import net.thevpc.nuts.util.NStringUtils;
 
 import java.util.*;
 
@@ -14,11 +15,8 @@ public class NWebRequest {
     private HttpMethod method;
     private Map<String, List<String>> headers;
     private Map<String, List<String>> parameters;
-    private byte[] body;
+    private NWebData body;
     private boolean oneWay;
-    private String authorizationBearer;
-    private String contentLanguage;
-    private String contentType;
     private Integer readTimeout;
     private Integer connectTimeout;
 
@@ -73,13 +71,27 @@ public class NWebRequest {
         return setMethod(HttpMethod.DELETE);
     }
 
-    public String getAuthorizationBearer() {
-        return authorizationBearer;
+    public String getHeader(String name) {
+        if (headers != null) {
+            List<String> values = headers.get(name);
+            if (values != null) {
+                for (String value : values) {
+                    return value;
+                }
+            }
+        }
+        return null;
     }
 
-    public NWebRequest setAuthorizationBearer(String authorizationBearer) {
-        this.authorizationBearer = authorizationBearer;
-        return this;
+    public List<String> getHeaders(String name) {
+        List<String> all = new ArrayList<>();
+        if (headers != null) {
+            List<String> values = headers.get(name);
+            if (values != null) {
+                all.addAll(values);
+            }
+        }
+        return all;
     }
 
     public Map<String, List<String>> getHeaders() {
@@ -264,7 +276,7 @@ public class NWebRequest {
         return this;
     }
 
-    public byte[] getBody() {
+    public NWebData getBody() {
         return body;
     }
 
@@ -272,27 +284,61 @@ public class NWebRequest {
         if (body == null) {
             this.body = null;
         } else {
-            this.body = GSON.toJson(body).getBytes();
+            this.body = NWebData.of(GSON.toJson(body).getBytes());
         }
+        setContentType("application/json");
         return this;
     }
 
     public NWebRequest setBody(byte[] body) {
+        this.body = body == null ? null : NWebData.of(body);
+        return this;
+    }
+
+    public NWebRequest setBody(NWebData body) {
         this.body = body;
         return this;
     }
 
-    public String getContentLanguage() {
-        return contentLanguage;
-    }
-
-    public NWebRequest setContentLanguage(String contentLanguage) {
-        this.contentLanguage = contentLanguage;
+    public NWebRequest setBody(NPath body) {
+        this.body = body == null ? null : NWebData.of(body);
         return this;
     }
 
+    public NWebRequest setContentLanguage(String contentLanguage) {
+        return setHeader("Content-Language", contentLanguage);
+    }
+
+    public NWebRequest setAuthorizationBearer(String authorizationBearer) {
+        authorizationBearer = NStringUtils.trimToNull(authorizationBearer);
+        if (authorizationBearer != null) {
+            authorizationBearer = "Bearer " + authorizationBearer;
+        }
+        return setAuthorization(authorizationBearer);
+    }
+
+    public NWebRequest setAuthorization(String authorization) {
+        return setHeader("Authorization", NStringUtils.trimToNull(authorization));
+    }
+
+    public String getAuthorization() {
+        return getHeader("Authorization");
+    }
+
+    public String getAuthorizationBearer() {
+        String b = getHeader("Authorization");
+        if (b != null && b.toLowerCase().startsWith("bearer ")) {
+            return b.substring("bearer ".length()).trim();
+        }
+        return b;
+    }
+
+    public String getContentLanguage() {
+        return getHeader("Content-Language");
+    }
+
     public String getContentType() {
-        return contentType;
+        return getHeader("Content-Type");
     }
 
     public NWebRequest setContentTypeForm() {
@@ -300,8 +346,7 @@ public class NWebRequest {
     }
 
     public NWebRequest setContentType(String contentType) {
-        this.contentType = contentType;
-        return this;
+        return setHeader("Content-Type", contentType);
     }
 
     public Integer getReadTimeout() {
