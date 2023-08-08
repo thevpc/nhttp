@@ -82,7 +82,7 @@ public class NWebServerHttpContext {
         if (pos < 0 || pos >= pathParts.length) {
             return "";
         }
-        return pathParts[1];
+        return pathParts[pos];
     }
 
     public NSession getSession() {
