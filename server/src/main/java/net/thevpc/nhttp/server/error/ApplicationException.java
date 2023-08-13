@@ -1,5 +1,8 @@
 package net.thevpc.nhttp.server.error;
 
+import net.thevpc.nhttp.server.api.NWebErrorCode;
+import net.thevpc.nhttp.server.api.NWebErrorCodeAware;
+
 public class ApplicationException extends RuntimeException implements NWebErrorCodeAware {
     private NWebErrorCode code;
 

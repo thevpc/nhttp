@@ -1,8 +1,9 @@
 package net.thevpc.nhttp.server.security;
 
-import net.thevpc.nhttp.server.error.NWebErrorCode;
+import net.thevpc.nhttp.server.api.NWebErrorCode;
 import net.thevpc.nhttp.server.error.NWebUnauthorizedSecurityException;
-import net.thevpc.nhttp.server.model.NWebToken;
+import net.thevpc.nhttp.server.api.NWebToken;
+import net.thevpc.nhttp.server.api.NWebUser;
 import net.thevpc.nuts.util.NUnsafeRunnable;
 
 public class NWebSecurityContext {

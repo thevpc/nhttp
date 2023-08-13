@@ -3,10 +3,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>net.thevpc.nhttp</groupId>
-    <artifactId>nhttp-server</artifactId>
+    <artifactId>nhttp-server-api</artifactId>
     <version>0.8.4.0</version>
     <packaging>jar</packaging><!-- small changes, do not require version change, didn't updated the version-->
-    <name>NHTTP Server</name>
+    <name>NHTTP Server API Support</name>
     <url>https://github.com/thevpc/nhttp</url>
     <description>Nuts Package Manager Bootstrap</description>
     <properties>
@@ -62,22 +62,6 @@
             <groupId>net.thevpc.nhttp</groupId>
             <artifactId>nhttp-commons</artifactId>
             <version>0.8.4.0</version>
-        </dependency>
-        <dependency>
-            <groupId>net.thevpc.nhttp</groupId>
-            <artifactId>nhttp-server-api</artifactId>
-            <version>0.8.4.0</version>
-        </dependency>
-        <dependency>
-            <groupId>net.thevpc.nuts</groupId>
-            <artifactId>nuts</artifactId>
-            <version>0.8.4</version>
-        </dependency>
-        <!-- REMOVE ME-->
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.10.1</version>
         </dependency>
     </dependencies>
     <distributionManagement>

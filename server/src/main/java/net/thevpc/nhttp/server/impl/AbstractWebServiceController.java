@@ -1,10 +1,10 @@
-package net.thevpc.nhttp.server;
+package net.thevpc.nhttp.server.impl;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import net.thevpc.nhttp.server.security.NWebUserResolver;
-import net.thevpc.nhttp.server.util.NWebLogger;
+import net.thevpc.nhttp.server.api.NWebUserResolver;
+import net.thevpc.nhttp.server.api.NWebLogger;
 import net.thevpc.nuts.NMsg;
 import net.thevpc.nuts.NSession;
 
@@ -26,7 +26,7 @@ public abstract class AbstractWebServiceController implements HttpHandler {
     }
 
     public void handle(HttpExchange t) {
-        NWebServerHttpContext rc = new NWebServerHttpContext(server,t, userResolver, session,logger);
+        NWebServerHttpContextImpl rc = new NWebServerHttpContextImpl(server,t, userResolver, session,logger);
         rc.trace(Level.INFO, NMsg.ofPlain("incoming call"));
         try {
 
@@ -47,6 +47,6 @@ public abstract class AbstractWebServiceController implements HttpHandler {
         server.createContext(path, this);
     }
 
-    public abstract void handle(NWebServerHttpContext rc);
+    public abstract void handle(NWebServerHttpContextImpl rc);
 
 }

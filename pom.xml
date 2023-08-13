@@ -11,7 +11,9 @@
     <modules>
         <module>client</module>
         <module>server</module>
+        <module>server-api</module>
         <module>commons</module>
+        <module>servlet</module>
     </modules>
     <properties>
     </properties>

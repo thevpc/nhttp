@@ -36,3 +36,5 @@ build/
 client/target
 server/target
 commons/target
+server-api/target
+servlet/target

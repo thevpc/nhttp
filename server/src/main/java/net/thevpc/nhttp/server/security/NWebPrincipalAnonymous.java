@@ -1,5 +1,7 @@
 package net.thevpc.nhttp.server.security;
 
+import net.thevpc.nhttp.server.api.NWebPrincipal;
+
 public class NWebPrincipalAnonymous implements NWebPrincipal {
     @Override
     public String getId() {

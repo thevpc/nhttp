@@ -1,5 +1,8 @@
 package net.thevpc.nhttp.server.security;
 
+import net.thevpc.nhttp.server.api.NWebPrincipal;
+import net.thevpc.nhttp.server.api.NWebUser;
+
 public class NWebPrincipalSimple implements NWebPrincipal {
     private NWebUser user;
     private boolean root;

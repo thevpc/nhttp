@@ -1,4 +1,4 @@
-package net.thevpc.nhttp.server.error;
+package net.thevpc.nhttp.server.api;
 
 public class NWebErrorCode {
     private String code;

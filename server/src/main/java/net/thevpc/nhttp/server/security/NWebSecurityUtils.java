@@ -1,6 +1,6 @@
 package net.thevpc.nhttp.server.security;
 
-import net.thevpc.nhttp.server.error.NWebErrorCode;
+import net.thevpc.nhttp.server.api.NWebErrorCode;
 import net.thevpc.nhttp.server.error.ApplicationException;
 
 import javax.crypto.Cipher;

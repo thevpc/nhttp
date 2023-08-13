@@ -4,15 +4,16 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
-import net.thevpc.nhttp.server.model.NWebServerOptions;
-import net.thevpc.nhttp.server.security.NWebUserResolver;
+import net.thevpc.nhttp.server.api.*;
+import net.thevpc.nhttp.server.impl.NWebServerHttpContextImpl;
+import net.thevpc.nhttp.server.model.DefaultNWebContainer;
 import net.thevpc.nhttp.server.util.NWebAppLoggerDefault;
-import net.thevpc.nhttp.server.util.NWebLogger;
 import net.thevpc.nuts.*;
 import net.thevpc.nuts.io.NIOException;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.text.NTextStyle;
 import net.thevpc.nuts.util.NLog;
+import net.thevpc.nuts.util.NStringUtils;
 
 import javax.net.ssl.*;
 import java.io.File;
@@ -26,7 +27,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.*;
 
-public class NWebServer {
+public class DefaultNHttpServer implements NHttpServer {
     private HttpServer server = null;
     private NWebServerOptions options;
     private NSession session;
@@ -36,12 +37,16 @@ public class NWebServer {
     private Long pid = null;
     private NWebServerRunner runner;
     private NWebLogger logger;
+    private File logFile;
     private String storeCredentials;
     private NMsg header;
     private String defaultLogFile;
     private String defaultPidFile;
+    private String serverName;
+    private int serverPort;
 
-    public NWebServer(NWebServerRunner runner, NWebServerOptions options, NSession session) {
+    public DefaultNHttpServer(String serverName, NWebServerRunner runner, NWebServerOptions options, NSession session) {
+        this.serverName = serverName;
         this.session = session;
         this.options = options;
         this.runner = runner;
@@ -71,7 +76,7 @@ public class NWebServer {
             backlog = 0;
         }
         options.setBacklog(backlog);
-        this.log = NLog.of(NWebServer.class, session);
+        this.log = NLog.of(DefaultNHttpServer.class, session);
         if (
                 (options.getMinConnexions() == null || options.getMinConnexions() <= 0)
                         && (options.getMaxConnexions() == null || options.getMaxConnexions() < 0)
@@ -94,6 +99,7 @@ public class NWebServer {
         if (options.getQueueSize() == null || options.getQueueSize() <= 0) {
             options.setQueueSize(10);
         }
+        this.serverPort=port;
         executor = new ThreadPoolExecutor(
                 options.getMinConnexions(), // core size
                 options.getMaxConnexions(), // max size
@@ -116,7 +122,7 @@ public class NWebServer {
         return storeCredentials;
     }
 
-    public NWebServer setStoreCredentials(String storeCredentials) {
+    public DefaultNHttpServer setStoreCredentials(String storeCredentials) {
         this.storeCredentials = storeCredentials;
         return this;
     }
@@ -136,7 +142,7 @@ public class NWebServer {
             NVersion jVersion = NVersion.of(j.getVersion()).get();
             if (jVersion.compareTo("1.8") >= 0
                     && jVersion.compareTo("1.9") < 0
-                    && "jdk" .equals(j.getPackaging())
+                    && "jdk".equals(j.getPackaging())
             ) {
                 NPath keyTool = NPath.of(j.getPath(), session).resolve("bin/keytool");
                 if (keyTool.isRegularFile()) {
@@ -189,26 +195,141 @@ public class NWebServer {
     }
 
     public void start() {
-        //log.with().level(Level.INFO).verb(NLogVerb.START).log(NMsg.ofC("##start## server %s", port));
+        prepareLogFile();
+        runner.bootstrap(new NWebServerConfig(this));
+        preparePidFile();
+        showStartupBanner();
+        prepareAfterBanner();
+        if (options.getSsl()) {
+            createHttpsServer();
+        } else {
+            createHttpServer();
+        }
+        runner.createContext(new DefaultNWebContainer("/", "NhttpServer"));
+        server.setExecutor(executor); // creates a default executor
+        server.start();
+    }
+
+    private void prepareAfterBanner() {
+        NWebUserResolver userResolver = runner.userResolver();
+        try {
+            new NWebServerHttpContextImpl(null, null, userResolver, session, logger)
+                    .runWithUnsafe(() -> {
+                        runner.initializeConfig();
+                    });
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void createHttpServer() {
+        try {
+            server = HttpServer.create(new InetSocketAddress(options.getPort()), options.getBacklog());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void createHttpsServer() {
+        genkeypair();
+        try {
+            //keytool - genkey - keystore my.keystore - keyalg RSA - keysize 2048 - validity 10000 - alias app - dname
+            //"cn=Unknown, ou=Unknown, o=Unknown, c=Unknown" - storepass abcdef12 - keypass abcdef12
+            // initialise the HTTPS server
+            HttpsServer httpsServer = HttpsServer.create(new InetSocketAddress(options.getPort()), options.getBacklog());
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+
+            // initialise the keystore
+            NPath storeJks = getStoreJks();
+            char[] password = getValidStorePass().toCharArray();
+            KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(storeJks.getInputStream(), password);
+
+            // setup the key manager factory
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+            kmf.init(ks, password);
+
+            // setup the trust manager factory
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+            tmf.init(ks);
+
+            // setup the HTTPS context and parameters
+            sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
+                public void configure(HttpsParameters params) {
+                    try {
+                        // initialise the SSL context
+                        SSLContext context = getSSLContext();
+                        SSLEngine engine = context.createSSLEngine();
+                        params.setNeedClientAuth(false);
+                        params.setCipherSuites(engine.getEnabledCipherSuites());
+                        params.setProtocols(engine.getEnabledProtocols());
+
+                        // Set the SSL parameters
+                        SSLParameters sslParameters = context.getSupportedSSLParameters();
+                        params.setSSLParameters(sslParameters);
+
+                    } catch (Exception ex) {
+                        logger.err(NMsg.ofPlain("Failed to create HTTPS port"));
+                    }
+                }
+            });
+            server = httpsServer;
+        } catch (Exception exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    private void showStartupBanner() {
+        logger.out(NMsg.ofC("[%s] ##start## %s...",
+                NBlankable.isBlank(serverName) ? "server" :
+                        NStringUtils.trim(serverName)
+                , Instant.now()));
+        logger.out(NMsg.ofC("      port            %s", options.getPort()));
+        logger.out(NMsg.ofC("      SSL/TLS Mode    %s", options.getSsl()));
+        logger.out(NMsg.ofC("      connexions      %s-%s", options.getMinConnexions(), options.getMaxConnexions()));
+        logger.out(NMsg.ofC("      idle time (sec) %s", options.getIdlTimeSeconds()));
+        logger.out(NMsg.ofC("      queue size      %s", options.getQueueSize()));
+        logger.out(NMsg.ofC("      java-version    %s", System.getProperty("java.version")));
+        logger.out(NMsg.ofC("      java-home       %s", System.getProperty("java.home")));
+        logger.out(NMsg.ofC("      user-name       %s", System.getProperty("user.name")));
+        logger.out(NMsg.ofC("      user-dir        %s", System.getProperty("user.dir")));
+        logger.out(NMsg.ofC("      log-file        %s", logFile));
+        if (pidFile != null) {
+            logger.out(NMsg.ofC("      pid             %s", pid));
+            logger.out(NMsg.ofC("      pid-file        %s", pidFile));
+        }
+    }
+
+    private void prepareLogFile() {
         String logFile2 = options.getLogFile();
-        if(NBlankable.isBlank(logFile2)){
-            logFile2= getDefaultLogFile();
+        if (NBlankable.isBlank(logFile2)) {
+            logFile2 = getDefaultLogFile();
         }
-        if(NBlankable.isBlank(logFile2)){
-            logFile2="server.log";
+        if (NBlankable.isBlank(logFile2)) {
+            logFile2 = serverName + ".log";
         }
-        logger = new NWebAppLoggerDefault(new File(logFile2), session);
+        if (NBlankable.isBlank(logFile2)) {
+            logFile2 = "server.log";
+        }
+        this.logFile = normalizedFile(logFile2);
+        logger = new NWebAppLoggerDefault(logFile, session);
         if (getHeader() != null) {
             logger.out(getHeader());
         }
-        runner.bootstrap(this);
+    }
 
+
+    private void preparePidFile() {
         String pidFilePath = this.options.getPidFile();
-        if(NBlankable.isBlank(pidFilePath)){
-            pidFilePath=getDefaultPidFile();
+        if (NBlankable.isBlank(pidFilePath)) {
+            pidFilePath = getDefaultPidFile();
         }
-        if(NBlankable.isBlank(pidFilePath)){
-            pidFilePath="server.pid";
+        if (NBlankable.isBlank(pidFilePath)) {
+            pidFilePath = serverName + ".pid";
+        }
+        if (NBlankable.isBlank(pidFilePath)) {
+            pidFilePath = "server.pid";
         }
         String pname = null;
         try {
@@ -246,88 +367,6 @@ public class NWebServer {
             }
             pidFile.deleteOnExit();
         }
-
-        logger.out(NMsg.ofC("[%s] ##start## server...", Instant.now()));
-        logger.out(NMsg.ofC("      port            %s", options.getPort()));
-        logger.out(NMsg.ofC("      SSL/TLS Mode    %s", options.getSsl()));
-        logger.out(NMsg.ofC("      connexions      %s-%s", options.getMinConnexions(), options.getMaxConnexions()));
-        logger.out(NMsg.ofC("      idle time (sec) %s", options.getIdlTimeSeconds()));
-        logger.out(NMsg.ofC("      queue size      %s", options.getQueueSize()));
-        logger.out(NMsg.ofC("      java-version    %s", System.getProperty("java.version")));
-        logger.out(NMsg.ofC("      java-home       %s", System.getProperty("java.home")));
-        logger.out(NMsg.ofC("      user-name       %s", System.getProperty("user.name")));
-        logger.out(NMsg.ofC("      user-dir        %s", System.getProperty("user.dir")));
-        if (pidFile != null) {
-            logger.out(NMsg.ofC("      pid             %s", pid));
-            logger.out(NMsg.ofC("      pid-file        %s", pidFile));
-        }
-        NWebUserResolver userResolver = runner.userResolver();
-        try {
-            new NWebServerHttpContext(null, null, userResolver, session, logger)
-                    .runWithUnsafe(() -> {
-                        runner.initializeConfig();
-                    });
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
-        if (options.getSsl()) {
-            genkeypair();
-            try {
-                //keytool - genkey - keystore my.keystore - keyalg RSA - keysize 2048 - validity 10000 - alias app - dname
-                //"cn=Unknown, ou=Unknown, o=Unknown, c=Unknown" - storepass abcdef12 - keypass abcdef12
-                // initialise the HTTPS server
-                HttpsServer httpsServer = HttpsServer.create(new InetSocketAddress(options.getPort()), options.getBacklog());
-                SSLContext sslContext = SSLContext.getInstance("TLS");
-
-                // initialise the keystore
-                NPath storeJks = getStoreJks();
-                char[] password = getValidStorePass().toCharArray();
-                KeyStore ks = KeyStore.getInstance("JKS");
-                ks.load(storeJks.getInputStream(), password);
-
-                // setup the key manager factory
-                KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-                kmf.init(ks, password);
-
-                // setup the trust manager factory
-                TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-                tmf.init(ks);
-
-                // setup the HTTPS context and parameters
-                sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-                httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
-                    public void configure(HttpsParameters params) {
-                        try {
-                            // initialise the SSL context
-                            SSLContext context = getSSLContext();
-                            SSLEngine engine = context.createSSLEngine();
-                            params.setNeedClientAuth(false);
-                            params.setCipherSuites(engine.getEnabledCipherSuites());
-                            params.setProtocols(engine.getEnabledProtocols());
-
-                            // Set the SSL parameters
-                            SSLParameters sslParameters = context.getSupportedSSLParameters();
-                            params.setSSLParameters(sslParameters);
-
-                        } catch (Exception ex) {
-                            logger.err(NMsg.ofPlain("Failed to create HTTPS port"));
-                        }
-                    }
-                });
-                server = httpsServer;
-            } catch (Exception exception) {
-                throw new RuntimeException(exception);
-            }
-        } else {
-            try {
-                server = HttpServer.create(new InetSocketAddress(options.getPort()), options.getBacklog());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        runner.createController();
-        server.setExecutor(executor); // creates a default executor
-        server.start();
     }
 
     public NWebServerOptions getOptions() {
@@ -350,7 +389,7 @@ public class NWebServer {
         return header;
     }
 
-    public NWebServer setHeader(NMsg header) {
+    public DefaultNHttpServer setHeader(NMsg header) {
         this.header = header;
         return this;
     }
@@ -359,7 +398,7 @@ public class NWebServer {
         return defaultLogFile;
     }
 
-    public NWebServer setDefaultLogFile(String defaultLogFile) {
+    public DefaultNHttpServer setDefaultLogFile(String defaultLogFile) {
         this.defaultLogFile = defaultLogFile;
         return this;
     }
@@ -368,8 +407,17 @@ public class NWebServer {
         return defaultPidFile;
     }
 
-    public NWebServer setDefaultPidFile(String defaultPidFile) {
+    public DefaultNHttpServer setDefaultPidFile(String defaultPidFile) {
         this.defaultPidFile = defaultPidFile;
         return this;
+    }
+
+    public String getServerName() {
+        return serverName;
+    }
+
+    @Override
+    public int getServerPort() {
+        return serverPort;
     }
 }

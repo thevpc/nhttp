@@ -1,15 +1,14 @@
-package net.thevpc.nhttp.server;
+package net.thevpc.nhttp.server.impl;
 
 import net.thevpc.nhttp.commons.HttpCode;
 import net.thevpc.nhttp.commons.HttpMethod;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import net.thevpc.nhttp.server.api.*;
 import net.thevpc.nhttp.server.error.*;
 import net.thevpc.nhttp.server.model.NWebErrorResult;
-import net.thevpc.nhttp.server.model.NWebToken;
 import net.thevpc.nhttp.server.security.*;
-import net.thevpc.nhttp.server.util.NWebResponseHeaders;
-import net.thevpc.nhttp.server.util.NWebLogger;
+import net.thevpc.nhttp.server.api.NWebLogger;
 import net.thevpc.nhttp.server.util.JsonUtils;
 import net.thevpc.nuts.NBlankable;
 import net.thevpc.nuts.NMsg;
@@ -27,8 +26,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.logging.Level;
 
-public class NWebServerHttpContext {
-    public static InheritableThreadLocal<NWebServerHttpContext> current = new InheritableThreadLocal<>();
+public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     private HttpServer server;
     private HttpExchange httpExchange;
     private NSession session;
@@ -43,9 +41,9 @@ public class NWebServerHttpContext {
     private NWebLogger logger;
 
 
-    public NWebServerHttpContext(HttpServer server, HttpExchange httpExchange,
-                                 NWebUserResolver userResolver,
-                                 NSession session, NWebLogger logger) {
+    public NWebServerHttpContextImpl(HttpServer server, HttpExchange httpExchange,
+                                     NWebUserResolver userResolver,
+                                     NSession session, NWebLogger logger) {
         this.server = server;
         this.userResolver = userResolver;
         this.httpExchange = httpExchange;
@@ -62,22 +60,27 @@ public class NWebServerHttpContext {
         return server;
     }
 
+    @Override
     public String getFirstPath() {
         return pathParts.length > 0 ? pathParts[0] : "";
     }
 
+    @Override
     public boolean isEmptyPath() {
         return pathParts.length == 0;
     }
 
+    @Override
     public int getPathSize() {
         return pathParts.length;
     }
 
+    @Override
     public String[] getPathParts() {
         return pathParts;
     }
 
+    @Override
     public String getPathPart(int pos) {
         if (pos < 0 || pos >= pathParts.length) {
             return "";
@@ -85,10 +88,12 @@ public class NWebServerHttpContext {
         return pathParts[pos];
     }
 
+    @Override
     public NSession getSession() {
         return session;
     }
 
+    @Override
     public <T> T getBodyAs(Class<T> cl) {
         String bodyAsString = getBodyAsString();
         if (bodyAsString.isEmpty()) {
@@ -100,6 +105,7 @@ public class NWebServerHttpContext {
         return JsonUtils.fromJson(bodyAsString, cl, session);
     }
 
+    @Override
     public String getBodyAsString() {
         if (requestBody == null) {
             try {
@@ -112,6 +118,7 @@ public class NWebServerHttpContext {
         return new String(requestBody);
     }
 
+    @Override
     public void sendPlainText(String ex, HttpCode code, NWebResponseHeaders headers) {
         String json = String.valueOf(ex);
         if (headers == null) {
@@ -121,10 +128,12 @@ public class NWebServerHttpContext {
         sendBytes(json.getBytes(), code, headers);
     }
 
+    @Override
     public void sendXml(String value) {
         sendXml(value, HttpCode.OK, new NWebResponseHeaders());
     }
 
+    @Override
     public void sendXml(String value, HttpCode code, NWebResponseHeaders headers) {
         String json = String.valueOf(value);
         if (headers == null) {
@@ -134,14 +143,17 @@ public class NWebServerHttpContext {
         sendBytes(json.getBytes(), code, headers);
     }
 
+    @Override
     public void sendJson(Object ex, NWebResponseHeaders headers) {
         sendJson(ex, HttpCode.OK, headers);
     }
 
+    @Override
     public void sendJson(Object ex) {
         sendJson(ex, HttpCode.OK, null);
     }
 
+    @Override
     public void sendJson(Object ex, HttpCode code, NWebResponseHeaders headers) {
         String json = JsonUtils.toJson(ex, session);
         if (headers == null) {
@@ -151,10 +163,12 @@ public class NWebServerHttpContext {
         sendBytes(json.getBytes(), code, headers);
     }
 
+    @Override
     public String getPath() {
         return httpExchange.getRequestURI().getPath();
     }
 
+    @Override
     public void sendError(Throwable ex) {
         if (ex instanceof NWebHttpException) {
             sendError((NWebHttpException) ex);
@@ -171,6 +185,7 @@ public class NWebServerHttpContext {
         }
     }
 
+    @Override
     public void sendError(NWebHttpException ex) {
         String message = ex.getMessage();
         if (message == null) {
@@ -182,6 +197,7 @@ public class NWebServerHttpContext {
         sendJson(o, ex.getHttpCode(), z);
     }
 
+    @Override
     public void sendBytes(byte[] bytes, HttpCode code, NWebResponseHeaders headers) {
         if (headers != null) {
             if (!NBlankable.isBlank(headers.getContentType())) {
@@ -205,6 +221,7 @@ public class NWebServerHttpContext {
         }
     }
 
+    @Override
     public HttpMethod getMethod() {
         if (method == null) {
             String m = httpExchange.getRequestMethod();
@@ -228,6 +245,7 @@ public class NWebServerHttpContext {
         return method;
     }
 
+    @Override
     public NWebServerHttpContext requireAuth() {
         List<String> authorization = httpExchange.getRequestHeaders().get("Authorization");
         NWebUser user = null;
@@ -239,7 +257,7 @@ public class NWebServerHttpContext {
                     if (s != null) {
                         if (s.toLowerCase().startsWith("bearer")) {
                             someToken = true;
-                            String yy = s.substring("bearer" .length()).trim();
+                            String yy = s.substring("bearer".length()).trim();
                             token = userResolver.parseToken(yy);
                             if (token != null) {
                                 user = userResolver.loadUser(token);
@@ -272,6 +290,7 @@ public class NWebServerHttpContext {
         return this;
     }
 
+    @Override
     public void trace(Level level, NMsg msg) {
         logger.out(NMsg.ofC(
                 "[%s] %8s %s %6s %s %s",
@@ -284,6 +303,7 @@ public class NWebServerHttpContext {
         ));
     }
 
+    @Override
     public NWebServerHttpContext requireMethod(HttpMethod... m) {
         HttpMethod c = getMethod();
         for (HttpMethod httpMethod : m) {
@@ -294,50 +314,54 @@ public class NWebServerHttpContext {
         throw new NWebHttpException("Not Allowed " + c, new NWebErrorCode("HttpMethodNotAllowed", String.valueOf(c)), HttpCode.METHOD_NOT_ALLOWED);
     }
 
+    @Override
     public NWebServerHttpContext throwNoFound() {
         throw new NWebHttpException("Not Found", new NWebErrorCode("NotFound"), HttpCode.NOT_FOUND);
     }
 
+    @Override
     public NWebPrincipal getPrincipal() {
         if (user != null) {
-            return new NWebPrincipalSimple(user, "admin" .equals(user.getUserName()));
+            return new NWebPrincipalSimple(user, "admin".equals(user.getUserName()));
         }
         return new NWebPrincipalAnonymous();
     }
 
+    @Override
     public NOptional<NWebUser> getUser() {
         return NOptional.ofNamed(user, "user");
     }
 
+    @Override
     public NWebServerHttpContext setUser(NWebUser user) {
         this.user = user;
         return this;
     }
 
+    @Override
     public NOptional<NWebToken> getToken() {
         return NOptional.ofNamed(token, "token");
     }
 
+    @Override
     public NWebServerHttpContext setToken(NWebToken token) {
         this.token = token;
         return this;
     }
 
-    public static NOptional<NWebServerHttpContext> current() {
-        return NOptional.ofNamed(current.get(), "context");
-    }
-
+    @Override
     public NWebServerHttpContext runWithUnsafe(NUnsafeRunnable callable) throws Throwable {
-        NWebServerHttpContext t = current.get();
-        current.set(this);
+        NWebServerHttpContext t = NWebServerHttpContextHolder.current.get();
+        NWebServerHttpContextHolder.current.set(this);
         try {
             callable.run();
         } finally {
-            current.set(t);
+            NWebServerHttpContextHolder.current.set(t);
         }
         return this;
     }
 
+    @Override
     public Map<String, String> getQueryParams() {
         if (queryParams == null) {
             Map<String, String> m = NStringMapFormat.URL_FORMAT.parse(
@@ -351,10 +375,12 @@ public class NWebServerHttpContext {
         return queryParams;
     }
 
+    @Override
     public String getQueryParam(String queryParam) {
         return getQueryParams().get(queryParam);
     }
 
+    @Override
     public boolean containsQueryParam(String queryParam) {
         return getQueryParams().containsKey(queryParam);
     }

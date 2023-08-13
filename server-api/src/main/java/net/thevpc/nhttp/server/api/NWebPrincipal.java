@@ -1,4 +1,4 @@
-package net.thevpc.nhttp.server.security;
+package net.thevpc.nhttp.server.api;
 
 public interface NWebPrincipal {
     String getId();

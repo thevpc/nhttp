@@ -1,6 +1,4 @@
-package net.thevpc.nhttp.server.security;
-
-import net.thevpc.nhttp.server.model.NWebToken;
+package net.thevpc.nhttp.server.api;
 
 public interface NWebUserResolver {
     NWebToken parseToken(String token);

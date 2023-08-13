@@ -1,5 +1,6 @@
 package net.thevpc.nhttp.server.util;
 
+import net.thevpc.nhttp.server.api.NWebLogger;
 import net.thevpc.nuts.NMsg;
 import net.thevpc.nuts.NSession;
 import net.thevpc.nuts.text.NTexts;

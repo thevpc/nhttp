@@ -1,4 +1,4 @@
-package net.thevpc.nhttp.server.model;
+package net.thevpc.nhttp.server.api;
 
 public class NWebToken {
     private String userId;

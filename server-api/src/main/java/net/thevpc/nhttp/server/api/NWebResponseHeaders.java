@@ -1,6 +1,5 @@
-package net.thevpc.nhttp.server.util;
+package net.thevpc.nhttp.server.api;
 
-import net.thevpc.nhttp.server.error.NWebErrorCode;
 
 public class NWebResponseHeaders {
     private String contentType;
