@@ -5,7 +5,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import net.thevpc.nhttp.server.api.NWebUserResolver;
 import net.thevpc.nhttp.server.api.NWebLogger;
-import net.thevpc.nuts.NMsg;
+import net.thevpc.nuts.util.NMsg;
 import net.thevpc.nuts.NSession;
 
 import java.util.logging.Level;

@@ -1,19 +1,18 @@
 package net.thevpc.nhttp.server.api;
 
-import net.thevpc.nhttp.commons.HttpCode;
-import net.thevpc.nhttp.server.api.NWebErrorCode;
+import net.thevpc.nuts.web.NHttpCode;
 
 public class NWebHttpException extends RuntimeException implements NWebErrorCodeAware {
-    private HttpCode httpCode;
+    private NHttpCode httpCode;
     private NWebErrorCode appErrorCode;
 
-    public NWebHttpException(String message, NWebErrorCode appErrorCode, HttpCode httpCode) {
+    public NWebHttpException(String message, NWebErrorCode appErrorCode, NHttpCode httpCode) {
         super(message);
         this.httpCode = httpCode;
         this.appErrorCode = appErrorCode;
     }
 
-    public HttpCode getHttpCode() {
+    public NHttpCode getHttpCode() {
         return httpCode;
     }
 

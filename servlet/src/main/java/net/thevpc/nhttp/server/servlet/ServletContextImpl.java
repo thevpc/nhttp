@@ -1,7 +1,7 @@
 package net.thevpc.nhttp.server.servlet;
 
 import net.thevpc.nhttp.server.api.NHttpServer;
-import net.thevpc.nuts.NMsg;
+import net.thevpc.nuts.util.NMsg;
 
 import javax.servlet.*;
 import javax.servlet.descriptor.JspConfigDescriptor;

@@ -1,6 +1,6 @@
 package net.thevpc.nhttp.server.api;
 
-import net.thevpc.nuts.NOptional;
+import net.thevpc.nuts.util.NOptional;
 
 public interface NWebErrorCodeAware {
     static NOptional<NWebErrorCode> codeOf(Object any){

@@ -1,16 +1,14 @@
 package net.thevpc.nhttp.client;
 
-import net.thevpc.nhttp.commons.HttpMethod;
+import net.thevpc.nuts.web.NHttpMethod;
+import net.thevpc.nuts.web.NHttpUrlEncoder;
 import net.thevpc.nuts.util.NAssert;
 import net.thevpc.nuts.util.NIOUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -52,7 +50,7 @@ public class NWebCli {
     public NWebResponse run(NWebRequest r) {
         NAssert.requireNonNull(r, "request");
         NAssert.requireNonNull(r.getMethod(), "method");
-        HttpMethod method = r.getMethod();
+        NHttpMethod method = r.getMethod();
         String p = r.getUrl();
         StringBuilder u = new StringBuilder();
         if (prefix == null || p.startsWith("http:") || p.startsWith("https:")) {
@@ -89,14 +87,10 @@ public class NWebCli {
                         if (sb.length() > 0) {
                             sb.append("&");
                         }
-                        try {
-                            sb.append(URLEncoder.encode(k, StandardCharsets.UTF_8.toString()))
-                                    .append("=")
-                                    .append(URLEncoder.encode(v, StandardCharsets.UTF_8.toString()))
-                            ;
-                        } catch (UnsupportedEncodingException ex) {
-                            throw new RuntimeException(ex);
-                        }
+                        sb.append(NHttpUrlEncoder.encode(k))
+                                .append("=")
+                                .append(NHttpUrlEncoder.encode(v))
+                        ;
                     }
                 }
             }

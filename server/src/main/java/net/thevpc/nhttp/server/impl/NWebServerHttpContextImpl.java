@@ -1,7 +1,7 @@
 package net.thevpc.nhttp.server.impl;
 
-import net.thevpc.nhttp.commons.HttpCode;
-import net.thevpc.nhttp.commons.HttpMethod;
+import net.thevpc.nuts.web.NHttpCode;
+import net.thevpc.nuts.web.NHttpMethod;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import net.thevpc.nhttp.server.api.*;
@@ -11,8 +11,8 @@ import net.thevpc.nhttp.server.security.*;
 import net.thevpc.nhttp.server.api.NWebLogger;
 import net.thevpc.nhttp.server.util.JsonUtils;
 import net.thevpc.nuts.NBlankable;
-import net.thevpc.nuts.NMsg;
-import net.thevpc.nuts.NOptional;
+import net.thevpc.nuts.util.NMsg;
+import net.thevpc.nuts.util.NOptional;
 import net.thevpc.nuts.NSession;
 import net.thevpc.nuts.io.NCp;
 import net.thevpc.nuts.util.NStringMapFormat;
@@ -31,7 +31,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     private HttpExchange httpExchange;
     private NSession session;
     private byte[] requestBody = null;
-    private HttpMethod method;
+    private NHttpMethod method;
     private NWebUser user;
     private NWebToken token;
     private NWebUserResolver userResolver;
@@ -119,7 +119,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public void sendPlainText(String ex, HttpCode code, NWebResponseHeaders headers) {
+    public void sendPlainText(String ex, NHttpCode code, NWebResponseHeaders headers) {
         String json = String.valueOf(ex);
         if (headers == null) {
             headers = new NWebResponseHeaders();
@@ -130,11 +130,11 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
 
     @Override
     public void sendXml(String value) {
-        sendXml(value, HttpCode.OK, new NWebResponseHeaders());
+        sendXml(value, NHttpCode.OK, new NWebResponseHeaders());
     }
 
     @Override
-    public void sendXml(String value, HttpCode code, NWebResponseHeaders headers) {
+    public void sendXml(String value, NHttpCode code, NWebResponseHeaders headers) {
         String json = String.valueOf(value);
         if (headers == null) {
             headers = new NWebResponseHeaders();
@@ -145,16 +145,16 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
 
     @Override
     public void sendJson(Object ex, NWebResponseHeaders headers) {
-        sendJson(ex, HttpCode.OK, headers);
+        sendJson(ex, NHttpCode.OK, headers);
     }
 
     @Override
     public void sendJson(Object ex) {
-        sendJson(ex, HttpCode.OK, null);
+        sendJson(ex, NHttpCode.OK, null);
     }
 
     @Override
-    public void sendJson(Object ex, HttpCode code, NWebResponseHeaders headers) {
+    public void sendJson(Object ex, NHttpCode code, NWebResponseHeaders headers) {
         String json = JsonUtils.toJson(ex, session);
         if (headers == null) {
             headers = new NWebResponseHeaders();
@@ -174,14 +174,14 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
             sendError((NWebHttpException) ex);
         } else if (ex instanceof NoSuchElementException) {
             sendError(new NWebHttpException(ex.getMessage(),
-                    NWebErrorCodeAware.codeOf(ex).orElse(new NWebErrorCode("NotFound")), HttpCode.NOT_FOUND));
+                    NWebErrorCodeAware.codeOf(ex).orElse(new NWebErrorCode("NotFound")), NHttpCode.NOT_FOUND));
         } else if (ex instanceof NWebUnauthorizedSecurityException) {
-            sendError(new NWebHttpException(ex.getMessage(), NWebErrorCodeAware.codeOf(ex).get(), HttpCode.UNAUTHORIZED));
+            sendError(new NWebHttpException(ex.getMessage(), NWebErrorCodeAware.codeOf(ex).get(), NHttpCode.UNAUTHORIZED));
         } else if (ex instanceof SecurityException) {
-            sendError(new NWebHttpException(ex.getMessage(), NWebErrorCodeAware.codeOf(ex).get(), HttpCode.FORBIDDEN));
+            sendError(new NWebHttpException(ex.getMessage(), NWebErrorCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
         } else {
             ex.printStackTrace();
-            sendError(new NWebHttpException(ex.getMessage(), NWebErrorCodeAware.codeOf(ex).orElse(new NWebErrorCode("Error")), HttpCode.INTERNAL_SERVER_ERROR));
+            sendError(new NWebHttpException(ex.getMessage(), NWebErrorCodeAware.codeOf(ex).orElse(new NWebErrorCode("Error")), NHttpCode.INTERNAL_SERVER_ERROR));
         }
     }
 
@@ -198,7 +198,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public void sendBytes(byte[] bytes, HttpCode code, NWebResponseHeaders headers) {
+    public void sendBytes(byte[] bytes, NHttpCode code, NWebResponseHeaders headers) {
         if (headers != null) {
             if (!NBlankable.isBlank(headers.getContentType())) {
                 httpExchange.getResponseHeaders().add("Content-Type", headers.getContentType());
@@ -222,24 +222,24 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public HttpMethod getMethod() {
+    public NHttpMethod getMethod() {
         if (method == null) {
             String m = httpExchange.getRequestMethod();
             switch (NStringUtils.trim(m).toUpperCase()) {
                 case "GET":
-                    return method = HttpMethod.GET;
+                    return method = NHttpMethod.GET;
                 case "POST":
-                    return method = HttpMethod.POST;
+                    return method = NHttpMethod.POST;
                 case "PUT":
-                    return method = HttpMethod.PUT;
+                    return method = NHttpMethod.PUT;
                 case "OPTIONS":
-                    return method = HttpMethod.OPTIONS;
+                    return method = NHttpMethod.OPTIONS;
                 case "PATCH":
-                    return method = HttpMethod.PATCH;
+                    return method = NHttpMethod.PATCH;
                 case "DELETE":
-                    return method = HttpMethod.DELETE;
+                    return method = NHttpMethod.DELETE;
                 default:
-                    return method = HttpMethod.UNKNOWN;
+                    return method = NHttpMethod.UNKNOWN;
             }
         }
         return method;
@@ -304,19 +304,19 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public NWebServerHttpContext requireMethod(HttpMethod... m) {
-        HttpMethod c = getMethod();
-        for (HttpMethod httpMethod : m) {
+    public NWebServerHttpContext requireMethod(NHttpMethod... m) {
+        NHttpMethod c = getMethod();
+        for (NHttpMethod httpMethod : m) {
             if (httpMethod == c) {
                 return this;
             }
         }
-        throw new NWebHttpException("Not Allowed " + c, new NWebErrorCode("HttpMethodNotAllowed", String.valueOf(c)), HttpCode.METHOD_NOT_ALLOWED);
+        throw new NWebHttpException("Not Allowed " + c, new NWebErrorCode("HttpMethodNotAllowed", String.valueOf(c)), NHttpCode.METHOD_NOT_ALLOWED);
     }
 
     @Override
     public NWebServerHttpContext throwNoFound() {
-        throw new NWebHttpException("Not Found", new NWebErrorCode("NotFound"), HttpCode.NOT_FOUND);
+        throw new NWebHttpException("Not Found", new NWebErrorCode("NotFound"), NHttpCode.NOT_FOUND);
     }
 
     @Override

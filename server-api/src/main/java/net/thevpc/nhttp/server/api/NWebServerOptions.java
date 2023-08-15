@@ -1,6 +1,6 @@
 package net.thevpc.nhttp.server.api;
 
-public class NWebServerOptions {
+public class NWebServerOptions implements Cloneable{
     private Integer port;
     private boolean reset;
     private Boolean ssl;
@@ -104,5 +104,13 @@ public class NWebServerOptions {
     public NWebServerOptions setReset(boolean reset) {
         this.reset = reset;
         return this;
+    }
+
+    public NWebServerOptions copy() {
+        try {
+            return (NWebServerOptions) clone();
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

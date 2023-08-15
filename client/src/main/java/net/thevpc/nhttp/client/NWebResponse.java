@@ -36,8 +36,12 @@ public class NWebResponse {
         return content;
     }
 
-    public <K,V> Map<K, V> getContentMapAsJson() {
+    public <K, V> Map<K, V> getContentMapAsJson() {
         return getContentAsJson(Map.class);
+    }
+
+    public <K> List<K> getContentListAsJson() {
+        return getContentAsJson(List.class);
     }
 
     public <T> List<T> getContentArrayAsJson() {
@@ -53,6 +57,20 @@ public class NWebResponse {
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
+    }
+
+    public String getContentAsString() {
+        if (content == null) {
+            return null;
+        }
+        return new String(content.bytes());
+    }
+
+    public byte[] getContentAsBytes() {
+        if (content == null) {
+            return null;
+        }
+        return content.bytes();
     }
 
     public boolean isError() {

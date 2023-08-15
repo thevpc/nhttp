@@ -7,12 +7,15 @@ import com.sun.net.httpserver.HttpsServer;
 import net.thevpc.nhttp.server.api.*;
 import net.thevpc.nhttp.server.impl.NWebServerHttpContextImpl;
 import net.thevpc.nhttp.server.model.DefaultNWebContainer;
+import net.thevpc.nhttp.server.util.ExecutorBuilder;
 import net.thevpc.nhttp.server.util.NWebAppLoggerDefault;
+import net.thevpc.nhttp.server.util.OptionsValidator;
 import net.thevpc.nuts.*;
 import net.thevpc.nuts.io.NIOException;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.text.NTextStyle;
-import net.thevpc.nuts.util.NLog;
+import net.thevpc.nuts.log.NLog;
+import net.thevpc.nuts.util.NMsg;
 import net.thevpc.nuts.util.NStringUtils;
 
 import javax.net.ssl.*;
@@ -30,9 +33,10 @@ import java.util.concurrent.*;
 public class DefaultNHttpServer implements NHttpServer {
     private HttpServer server = null;
     private NWebServerOptions options;
+    private NWebServerOptions effectiveOptions;
     private NSession session;
     private NLog log;
-    private Executor executor;
+    private ExecutorService executor;
     private File pidFile;
     private Long pid = null;
     private NWebServerRunner runner;
@@ -43,70 +47,13 @@ public class DefaultNHttpServer implements NHttpServer {
     private String defaultLogFile;
     private String defaultPidFile;
     private String serverName;
-    private int serverPort;
 
     public DefaultNHttpServer(String serverName, NWebServerRunner runner, NWebServerOptions options, NSession session) {
         this.serverName = serverName;
         this.session = session;
         this.options = options;
         this.runner = runner;
-        int port = options.getPort() == null ? -1 : options.getPort();
-        if (port <= 0) {
-            if (options.getSsl() == null || !options.getSsl()) {
-                options.setSsl(false);
-                port = 8080;
-            } else {
-                port = 8443;
-            }
-        } else {
-            if (options.getSsl() == null) {
-                if (port == 433
-                        || (port >= 8400 && port <= 8499)
-                        || (port >= 4000 && port <= 4999)
-                ) {
-                    options.setSsl(true);
-                } else {
-                    options.setSsl(false);
-                }
-            }
-        }
-        options.setPort(port);
-        int backlog = options.getBacklog() == null ? -1 : options.getBacklog();
-        if (backlog < 0) {
-            backlog = 0;
-        }
-        options.setBacklog(backlog);
         this.log = NLog.of(DefaultNHttpServer.class, session);
-        if (
-                (options.getMinConnexions() == null || options.getMinConnexions() <= 0)
-                        && (options.getMaxConnexions() == null || options.getMaxConnexions() < 0)
-        ) {
-            options.setMinConnexions(1);
-            options.setMaxConnexions(10);
-        } else if ((options.getMinConnexions() == null || options.getMinConnexions() <= 0)) {
-            options.setMinConnexions(1);
-        } else if ((options.getMaxConnexions() == null || options.getMaxConnexions() <= 0)) {
-            options.setMaxConnexions(10);
-        } else if (options.getMaxConnexions() < options.getMinConnexions()) {
-            throw new NIllegalArgumentException(this.session, NMsg.ofC("invalid connexions bounds %s..%s", options.getMinConnexions(), options.getMaxConnexions()));
-        }
-        if (options.getQueueSize() == null || options.getQueueSize() <= 0) {
-            options.setQueueSize(5);
-        }
-        if (options.getIdlTimeSeconds() == null || options.getIdlTimeSeconds() <= 0) {
-            options.setIdlTimeSeconds(10 * 60);
-        }
-        if (options.getQueueSize() == null || options.getQueueSize() <= 0) {
-            options.setQueueSize(10);
-        }
-        this.serverPort=port;
-        executor = new ThreadPoolExecutor(
-                options.getMinConnexions(), // core size
-                options.getMaxConnexions(), // max size
-                options.getIdlTimeSeconds(), // idle timeout
-                TimeUnit.SECONDS,
-                new ArrayBlockingQueue<Runnable>(options.getQueueSize())
-        );
     }
 
     private File normalizedFile(String str) {
@@ -194,13 +141,63 @@ public class DefaultNHttpServer implements NHttpServer {
         return session.getAppVarFolder().resolve("app-store.jks");
     }
 
+    private void compile() {
+        if (this.effectiveOptions == null) {
+            this.effectiveOptions = OptionsValidator.validateOptions(options);
+            String logFile2 = effectiveOptions.getLogFile();
+            if (NBlankable.isBlank(logFile2)) {
+                logFile2 = getDefaultLogFile();
+            }
+            if (NBlankable.isBlank(logFile2)) {
+                logFile2 = serverName + ".log";
+            }
+            if (NBlankable.isBlank(logFile2)) {
+                logFile2 = "server.log";
+            }
+            this.logFile = normalizedFile(logFile2);
+            this.effectiveOptions.setLogFile(this.logFile.getAbsolutePath());
+            String pidFilePath = this.effectiveOptions.getPidFile();
+            if (NBlankable.isBlank(pidFilePath)) {
+                pidFilePath = getDefaultPidFile();
+            }
+            if (NBlankable.isBlank(pidFilePath)) {
+                pidFilePath = serverName + ".pid";
+            }
+            if (NBlankable.isBlank(pidFilePath)) {
+                pidFilePath = "server.pid";
+            }
+            String pname = null;
+            try {
+                pname = ManagementFactory.getRuntimeMXBean().getName();
+            } catch (Exception e) {
+                //
+            }
+            if (pname != null && pname.matches("[0-9]+@.*")) {
+                pid = Long.parseLong(pname.substring(0, pname.indexOf('@')));
+            }
+            if (NBlankable.isBlank(pidFilePath)) {
+                pidFile = normalizedFile(getDefaultPidFile());
+            } else {
+                pidFile = normalizedFile(pidFilePath);
+            }
+            this.effectiveOptions.setPidFile(pidFile.getAbsolutePath());
+        }
+    }
+
     public void start() {
+        compile();
         prepareLogFile();
-        runner.bootstrap(new NWebServerConfig(this));
         preparePidFile();
+        this.executor = new ExecutorBuilder()
+                .setIdlTimeSeconds(effectiveOptions.getIdlTimeSeconds())
+                .setQueueSize(effectiveOptions.getQueueSize())
+                .setMaxConnexions(effectiveOptions.getMaxConnexions())
+                .setMinConnexions(effectiveOptions.getMinConnexions())
+                .build();
+        runner.bootstrap(new NWebServerConfig(this));
         showStartupBanner();
         prepareAfterBanner();
-        if (options.getSsl()) {
+        if (effectiveOptions.getSsl()) {
             createHttpsServer();
         } else {
             createHttpServer();
@@ -224,11 +221,12 @@ public class DefaultNHttpServer implements NHttpServer {
 
     private void createHttpServer() {
         try {
-            server = HttpServer.create(new InetSocketAddress(options.getPort()), options.getBacklog());
+            server = HttpServer.create(new InetSocketAddress(effectiveOptions.getPort()), effectiveOptions.getBacklog());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
+
 
     private void createHttpsServer() {
         genkeypair();
@@ -236,7 +234,7 @@ public class DefaultNHttpServer implements NHttpServer {
             //keytool - genkey - keystore my.keystore - keyalg RSA - keysize 2048 - validity 10000 - alias app - dname
             //"cn=Unknown, ou=Unknown, o=Unknown, c=Unknown" - storepass abcdef12 - keypass abcdef12
             // initialise the HTTPS server
-            HttpsServer httpsServer = HttpsServer.create(new InetSocketAddress(options.getPort()), options.getBacklog());
+            HttpsServer httpsServer = HttpsServer.create(new InetSocketAddress(effectiveOptions.getPort()), effectiveOptions.getBacklog());
             SSLContext sslContext = SSLContext.getInstance("TLS");
 
             // initialise the keystore
@@ -285,11 +283,11 @@ public class DefaultNHttpServer implements NHttpServer {
                 NBlankable.isBlank(serverName) ? "server" :
                         NStringUtils.trim(serverName)
                 , Instant.now()));
-        logger.out(NMsg.ofC("      port            %s", options.getPort()));
-        logger.out(NMsg.ofC("      SSL/TLS Mode    %s", options.getSsl()));
-        logger.out(NMsg.ofC("      connexions      %s-%s", options.getMinConnexions(), options.getMaxConnexions()));
-        logger.out(NMsg.ofC("      idle time (sec) %s", options.getIdlTimeSeconds()));
-        logger.out(NMsg.ofC("      queue size      %s", options.getQueueSize()));
+        logger.out(NMsg.ofC("      port            %s", effectiveOptions.getPort()));
+        logger.out(NMsg.ofC("      SSL/TLS Mode    %s", effectiveOptions.getSsl()));
+        logger.out(NMsg.ofC("      connexions      %s-%s", effectiveOptions.getMinConnexions(), effectiveOptions.getMaxConnexions()));
+        logger.out(NMsg.ofC("      idle time (sec) %s", effectiveOptions.getIdlTimeSeconds()));
+        logger.out(NMsg.ofC("      queue size      %s", effectiveOptions.getQueueSize()));
         logger.out(NMsg.ofC("      java-version    %s", System.getProperty("java.version")));
         logger.out(NMsg.ofC("      java-home       %s", System.getProperty("java.home")));
         logger.out(NMsg.ofC("      user-name       %s", System.getProperty("user.name")));
@@ -302,17 +300,6 @@ public class DefaultNHttpServer implements NHttpServer {
     }
 
     private void prepareLogFile() {
-        String logFile2 = options.getLogFile();
-        if (NBlankable.isBlank(logFile2)) {
-            logFile2 = getDefaultLogFile();
-        }
-        if (NBlankable.isBlank(logFile2)) {
-            logFile2 = serverName + ".log";
-        }
-        if (NBlankable.isBlank(logFile2)) {
-            logFile2 = "server.log";
-        }
-        this.logFile = normalizedFile(logFile2);
         logger = new NWebAppLoggerDefault(logFile, session);
         if (getHeader() != null) {
             logger.out(getHeader());
@@ -321,34 +308,8 @@ public class DefaultNHttpServer implements NHttpServer {
 
 
     private void preparePidFile() {
-        String pidFilePath = this.options.getPidFile();
-        if (NBlankable.isBlank(pidFilePath)) {
-            pidFilePath = getDefaultPidFile();
-        }
-        if (NBlankable.isBlank(pidFilePath)) {
-            pidFilePath = serverName + ".pid";
-        }
-        if (NBlankable.isBlank(pidFilePath)) {
-            pidFilePath = "server.pid";
-        }
-        String pname = null;
-        try {
-            pname = ManagementFactory.getRuntimeMXBean().getName();
-        } catch (Exception e) {
-            //
-        }
-        if (pname != null && pname.matches("[0-9]+@.*")) {
-            pid = Long.parseLong(pname.substring(0, pname.indexOf('@')));
-        }
         if (pid != null) {
-            if (NBlankable.isBlank(pidFilePath)) {
-                pidFile = normalizedFile(getDefaultPidFile());
-            } else {
-                pidFile = normalizedFile(pidFilePath);
-            }
             if (pidFile.exists()) {
-                logger.out(NMsg.ofC("      port            %s", options.getPort()));
-                logger.out(NMsg.ofC("      SSL/TLS Mode    %s", options.getSsl()));
                 if (pidFile != null) {
                     logger.out(NMsg.ofC("      pid             %s", pid));
                     logger.out(NMsg.ofC("      pid-file        %s", pidFile));
@@ -370,7 +331,8 @@ public class DefaultNHttpServer implements NHttpServer {
     }
 
     public NWebServerOptions getOptions() {
-        return options;
+        compile();
+        return effectiveOptions.copy();
     }
 
     public NWebLogger getLogger() {
@@ -418,6 +380,7 @@ public class DefaultNHttpServer implements NHttpServer {
 
     @Override
     public int getServerPort() {
-        return serverPort;
+        compile();
+        return effectiveOptions.getPort();
     }
 }

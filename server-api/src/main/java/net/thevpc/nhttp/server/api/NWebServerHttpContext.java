@@ -1,9 +1,9 @@
 package net.thevpc.nhttp.server.api;
 
-import net.thevpc.nhttp.commons.HttpCode;
-import net.thevpc.nhttp.commons.HttpMethod;
-import net.thevpc.nuts.NMsg;
-import net.thevpc.nuts.NOptional;
+import net.thevpc.nuts.web.NHttpCode;
+import net.thevpc.nuts.web.NHttpMethod;
+import net.thevpc.nuts.util.NMsg;
+import net.thevpc.nuts.util.NOptional;
 import net.thevpc.nuts.NSession;
 import net.thevpc.nuts.util.NUnsafeRunnable;
 
@@ -28,17 +28,17 @@ public interface NWebServerHttpContext {
 
     String getBodyAsString();
 
-    void sendPlainText(String ex, HttpCode code, NWebResponseHeaders headers);
+    void sendPlainText(String ex, NHttpCode code, NWebResponseHeaders headers);
 
     void sendXml(String value);
 
-    void sendXml(String value, HttpCode code, NWebResponseHeaders headers);
+    void sendXml(String value, NHttpCode code, NWebResponseHeaders headers);
 
     void sendJson(Object ex, NWebResponseHeaders headers);
 
     void sendJson(Object ex);
 
-    void sendJson(Object ex, HttpCode code, NWebResponseHeaders headers);
+    void sendJson(Object ex, NHttpCode code, NWebResponseHeaders headers);
 
     String getPath();
 
@@ -46,15 +46,15 @@ public interface NWebServerHttpContext {
 
     void sendError(NWebHttpException ex);
 
-    void sendBytes(byte[] bytes, HttpCode code, NWebResponseHeaders headers);
+    void sendBytes(byte[] bytes, NHttpCode code, NWebResponseHeaders headers);
 
-    HttpMethod getMethod();
+    NHttpMethod getMethod();
 
     NWebServerHttpContext requireAuth();
 
     void trace(Level level, NMsg msg);
 
-    NWebServerHttpContext requireMethod(HttpMethod... m);
+    NWebServerHttpContext requireMethod(NHttpMethod... m);
 
     NWebServerHttpContext throwNoFound();
 

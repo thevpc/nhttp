@@ -2,9 +2,14 @@ package net.thevpc.nhttp.client;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.thevpc.nhttp.commons.HttpMethod;
+import net.thevpc.nuts.web.NHttpMethod;
+import net.thevpc.nuts.web.NHttpUrlEncoder;
+import net.thevpc.nuts.NBlankable;
+import net.thevpc.nuts.util.NMsg;
 import net.thevpc.nuts.cmdline.NArg;
 import net.thevpc.nuts.io.NPath;
+import net.thevpc.nuts.util.NAssert;
+import net.thevpc.nuts.util.NStringBuilder;
 import net.thevpc.nuts.util.NStringUtils;
 
 import java.util.*;
@@ -12,7 +17,7 @@ import java.util.*;
 public class NWebRequest {
     public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private String url;
-    private HttpMethod method;
+    private NHttpMethod method;
     private Map<String, List<String>> headers;
     private Map<String, List<String>> parameters;
     private NWebData body;
@@ -33,42 +38,156 @@ public class NWebRequest {
         return url;
     }
 
+    public NWebRequest setUrl(String url, Object... vars) {
+        NAssert.requireNonNull(url, "url");
+        NAssert.requireNonNull(vars, "vars");
+        NStringBuilder sb = new NStringBuilder();
+        char[] charArray = url.toCharArray();
+        char last = '\0';
+        int index = 0;
+        boolean inParams = false;
+        for (int i = 0; i < charArray.length; i++) {
+            char c = charArray[i];
+            switch (c) {
+                case '?': {
+                    inParams = true;
+                    last = '?';
+                    sb.append(c);
+                    break;
+                }
+                case '/': {
+                    if (inParams) {
+                        sb.append(c);
+                    } else {
+                        if (sb.endsWith(":/")) {
+                            // okkay
+                        } else if (sb.endsWith('/')) {
+                            // ignore
+                        } else {
+                            sb.append('/');
+                            last = c;
+                        }
+                    }
+                    break;
+                }
+                case '{': {
+                    if (inParams) {
+                        sb.append(c);
+                    } else {
+                        if (i + 1 < charArray.length) {
+                            switch (charArray[i + 1]) {
+                                case '}': {
+                                    last = 's';
+                                    if(index>=vars.length){
+                                        throw new IllegalArgumentException(NMsg.ofC("missing var at index %s in %s",index,url).toString());
+                                    }
+                                    if (!NBlankable.isBlank(vars[index])) {
+                                        sb.append(NHttpUrlEncoder.encodeObject(vars[index]));
+                                    } else {
+                                        if (!sb.endsWith("://") && sb.endsWith('/')) {
+                                            sb.removeLast();
+                                        }
+                                    }
+                                    i++;
+                                    index++;
+                                    break;
+                                }
+                                default: {
+                                    sb.append('{').append(charArray[i + 1]);
+                                    i++;
+                                    last = 'a';
+                                    break;
+                                }
+                            }
+                        } else {
+                            sb.append(c);
+                            last = 'a';
+                        }
+                    }
+                    break;
+                }
+                case '%': {
+                    if (inParams) {
+                        sb.append(c);
+                    } else {
+                        if (i + 1 < charArray.length) {
+                            switch (charArray[i + 1]) {
+                                case 's': {
+                                    last = 's';
+                                    if(index>=vars.length){
+                                        throw new IllegalArgumentException(NMsg.ofC("missing var at index %s in %s",index,url).toString());
+                                    }
+                                    if (!NBlankable.isBlank(vars[index])) {
+                                        sb.append(NHttpUrlEncoder.encodeObject(vars[index]));
+                                    } else {
+                                        if (!sb.endsWith("://") && sb.endsWith('/')) {
+                                            sb.removeLast();
+                                        }
+                                    }
+                                    i++;
+                                    index++;
+                                    break;
+                                }
+                                default: {
+                                    sb.append('%').append(charArray[i + 1]);
+                                    i++;
+                                    last = 'a';
+                                    break;
+                                }
+                            }
+                        } else {
+                            sb.append(c);
+                            last = 'a';
+                        }
+                    }
+                    break;
+                }
+                default: {
+                    sb.append(c);
+                    last = 'a';
+                }
+            }
+        }
+        this.url = sb.toString();
+        return this;
+    }
+
     public NWebRequest setUrl(String url) {
         this.url = url;
         return this;
     }
 
-    public HttpMethod getMethod() {
+    public NHttpMethod getMethod() {
         return method;
     }
 
-    public NWebRequest setMethod(HttpMethod method) {
+    public NWebRequest setMethod(NHttpMethod method) {
         this.method = method;
         return this;
     }
 
     public NWebRequest get() {
-        return setMethod(HttpMethod.GET);
+        return setMethod(NHttpMethod.GET);
     }
 
     public NWebRequest post() {
-        return setMethod(HttpMethod.POST);
+        return setMethod(NHttpMethod.POST);
     }
 
     public NWebRequest patch() {
-        return setMethod(HttpMethod.PATCH);
+        return setMethod(NHttpMethod.PATCH);
     }
 
     public NWebRequest options() {
-        return setMethod(HttpMethod.OPTIONS);
+        return setMethod(NHttpMethod.OPTIONS);
     }
 
     public NWebRequest put() {
-        return setMethod(HttpMethod.PUT);
+        return setMethod(NHttpMethod.PUT);
     }
 
     public NWebRequest delete() {
-        return setMethod(HttpMethod.DELETE);
+        return setMethod(NHttpMethod.DELETE);
     }
 
     public String getHeader(String name) {
