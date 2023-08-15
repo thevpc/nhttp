@@ -1,6 +1,6 @@
 package net.thevpc.nhttp.server.util;
 
-import net.thevpc.nuts.NBlankable;
+import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.util.NLiteral;
 import net.thevpc.nuts.util.NMsg;
 

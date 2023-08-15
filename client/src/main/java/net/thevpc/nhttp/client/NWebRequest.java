@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.thevpc.nuts.web.NHttpMethod;
 import net.thevpc.nuts.web.NHttpUrlEncoder;
-import net.thevpc.nuts.NBlankable;
+import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.util.NMsg;
 import net.thevpc.nuts.cmdline.NArg;
 import net.thevpc.nuts.io.NPath;

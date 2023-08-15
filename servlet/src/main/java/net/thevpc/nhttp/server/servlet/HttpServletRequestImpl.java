@@ -1,7 +1,7 @@
 package net.thevpc.nhttp.server.servlet;
 
 import com.sun.net.httpserver.HttpExchange;
-import net.thevpc.nuts.NBlankable;
+import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.util.NLiteral;
 import net.thevpc.nuts.util.NAssert;
 import net.thevpc.nuts.util.NStringMapFormat;
