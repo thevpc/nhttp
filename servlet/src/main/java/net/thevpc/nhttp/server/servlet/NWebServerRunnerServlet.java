@@ -1,7 +1,9 @@
 package net.thevpc.nhttp.server.servlet;
 
 import net.thevpc.nhttp.server.api.*;
+import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.util.NStringBuilder;
+import net.thevpc.nuts.util.NStringUtils;
 
 import javax.servlet.*;
 import java.util.*;
@@ -52,7 +54,13 @@ public class NWebServerRunnerServlet implements NWebServerRunner {
             servletContextListener.contextInitialized(new ServletContextEvent(rootContext));
         }
         for (NWebServletConfig servlet : servlets) {
-            String contextPath = container.getContextPath();
+            String contextPath = NStringUtils.trim(container.getContextPath());
+            if(NBlankable.isBlank(contextPath)){
+                contextPath="/";
+            }
+            if(!contextPath.startsWith("/")){
+                contextPath="/"+contextPath;
+            }
             ServletConfigImpl config = new ServletConfigImpl(servlet, ws, rootContext);
 
             String url = servlet.getUrl();
@@ -73,6 +81,7 @@ public class NWebServerRunnerServlet implements NWebServerRunner {
                 sb.append("/");
                 sb.append(url);
             }
+            //System.out.println("BIND "+sb.toString()+" :: "+servlet.getServlet().getClass().getName());
             ws.getServer().createContext(sb.toString(), new ServletHttpHandler(
                     servlet,
                     container,

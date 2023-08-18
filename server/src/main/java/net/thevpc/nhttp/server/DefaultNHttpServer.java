@@ -204,7 +204,7 @@ public class DefaultNHttpServer implements NHttpServer {
         } else {
             createHttpServer();
         }
-        runner.createContext(new DefaultNWebContainer("/", "NhttpServer"));
+        runner.createContext(new DefaultNWebContainer(options.getContextPath(), "NhttpServer"));
         server.setExecutor(executor); // creates a default executor
         server.start();
     }

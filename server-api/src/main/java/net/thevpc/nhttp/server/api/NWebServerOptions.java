@@ -11,6 +11,7 @@ public class NWebServerOptions implements Cloneable{
     private Integer idlTimeSeconds;
     private String pidFile;
     private String logFile;
+    private String contextPath;
 
     public boolean isReset() {
         return reset;
@@ -112,5 +113,14 @@ public class NWebServerOptions implements Cloneable{
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public String getContextPath() {
+        return contextPath;
+    }
+
+    public NWebServerOptions setContextPath(String contextPath) {
+        this.contextPath = contextPath;
+        return this;
     }
 }
