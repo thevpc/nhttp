@@ -110,19 +110,17 @@ public class DefaultNHttpServer implements NHttpServer {
                         "-storepass", getValidStorePass()
                         //"-keypass", "abcdef12"
                 )
-                .setExecutionType(NExecutionType.SYSTEM)
+                .system()
                 .setSleepMillis(2000)
-                .grabOutputString()
-                .grabErrorString();
-        String outputString = elist.getOutputString();
-        String errorString = elist.getErrorString();
-        int result = elist.getResult();
+                .grabAll();
+        String outputString = elist.getGrabbedOutString();
+        int result = elist.getResultCode();
         if (result == 0) {
             //found
         } else {
             storeJks.mkParentDirs();
             NExecCommand.of(session)
-                    .setExecutionType(NExecutionType.SYSTEM)
+                    .system()
                     .addCommand(
                             keytoolCmd,
                             "-genkeypair",
@@ -134,7 +132,7 @@ public class DefaultNHttpServer implements NHttpServer {
                             "-dname", "cn=Unknown, ou=Unknown, o=Unknown, c=Unknown",
                             "-storepass", getValidStorePass(),
                             "-keypass", getValidStorePass()
-                    ).setFailFast(true)
+                    ).failFast()
                     .run();
         }
     }

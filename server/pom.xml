@@ -60,18 +60,8 @@
     <dependencies>
         <dependency>
             <groupId>net.thevpc.nhttp</groupId>
-            <artifactId>nhttp-commons</artifactId>
-            <version>0.8.4.0</version>
-        </dependency>
-        <dependency>
-            <groupId>net.thevpc.nhttp</groupId>
             <artifactId>nhttp-server-api</artifactId>
             <version>0.8.4.0</version>
-        </dependency>
-        <dependency>
-            <groupId>net.thevpc.nuts</groupId>
-            <artifactId>nuts</artifactId>
-            <version>0.8.4</version>
         </dependency>
         <!-- REMOVE ME-->
         <dependency>
