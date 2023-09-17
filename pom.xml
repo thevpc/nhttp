@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>net.thevpc.nhttp</groupId>
     <artifactId>nhttp-builder</artifactId>
-    <name>Nuts Http Builder</name>
+    <name>NHTTP Server Builder</name>
     <version>0.8.4.0</version>
     <packaging>pom</packaging>
     <modules>
