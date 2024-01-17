@@ -36,7 +36,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     private NWebToken token;
     private NWebUserResolver userResolver;
     private String[] pathParts;
-    private ByteArrayOutputStream bos = new ByteArrayOutputStream();
+//    private ByteArrayOutputStream bos = new ByteArrayOutputStream();
     private Map<String, String> queryParams;
     private NWebLogger logger;
 
@@ -210,11 +210,9 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
             }
         }
         try {
-            bos = new ByteArrayOutputStream();
-            bos.write(bytes);
-            httpExchange.sendResponseHeaders(code.getCode(), bos.size());
+            httpExchange.sendResponseHeaders(code.getCode(), bytes.length);
             OutputStream os = httpExchange.getResponseBody();
-            os.write(bos.toByteArray());
+            os.write(bytes);
             os.close();
         } catch (IOException e) {
             throw new ApplicationException(new NWebErrorCode("IO.SendFailed"), "send byte failed", e);
