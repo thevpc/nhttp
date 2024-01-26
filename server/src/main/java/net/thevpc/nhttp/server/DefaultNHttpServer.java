@@ -309,24 +309,43 @@ public class DefaultNHttpServer implements NHttpServer {
 
     private void preparePidFile() {
         if (pid != null) {
-            if (pidFile.exists()) {
-                if (pidFile != null) {
-                    logger.out(NMsg.ofC("      pid             %s", pid));
-                    logger.out(NMsg.ofC("      pid-file        %s", pidFile));
+            if (options.isIgnoreExistingPidFile()) {
+                try {
+                    if (pidFile.getParentFile() != null) {
+                        pidFile.getParentFile().mkdirs();
+                    }
+                    if (pidFile.exists()) {
+                        logger.out(NMsg.ofC("Un old pid file was %s. will be %s",
+                                        NMsg.ofStyled("found", NTextStyle.warn()),
+                                        NMsg.ofStyled("overridden", NTextStyle.warn())
+                                )
+                        );
+                    }
+                    Files.write(pidFile.toPath(), (pid + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                } catch (IOException e) {
+                    throw new NIOException(session, e);
                 }
-                logger.out(NMsg.ofC("Server is %s.", NMsg.ofStyled("ALREADY RUNNING", NTextStyle.warn())));
-                logger.out(NMsg.ofStyled("ABORT! (you may want to delete pid file)", NTextStyle.fail()));
-                System.exit(1);
-            }
-            try {
-                if (pidFile.getParentFile() != null) {
-                    pidFile.getParentFile().mkdirs();
+                pidFile.deleteOnExit();
+            } else {
+                if (pidFile.exists()) {
+                    if (pidFile != null) {
+                        logger.out(NMsg.ofC("      pid             %s", pid));
+                        logger.out(NMsg.ofC("      pid-file        %s", pidFile));
+                    }
+                    logger.out(NMsg.ofC("Server is %s.", NMsg.ofStyled("ALREADY RUNNING", NTextStyle.warn())));
+                    logger.out(NMsg.ofStyled("ABORT! (you may want to delete pid file)", NTextStyle.fail()));
+                    System.exit(1);
                 }
-                Files.write(pidFile.toPath(), (pid + "\n").getBytes(), StandardOpenOption.CREATE_NEW);
-            } catch (IOException e) {
-                throw new NIOException(session, e);
+                try {
+                    if (pidFile.getParentFile() != null) {
+                        pidFile.getParentFile().mkdirs();
+                    }
+                    Files.write(pidFile.toPath(), (pid + "\n").getBytes(), StandardOpenOption.CREATE_NEW);
+                } catch (IOException e) {
+                    throw new NIOException(session, e);
+                }
+                pidFile.deleteOnExit();
             }
-            pidFile.deleteOnExit();
         }
     }
 

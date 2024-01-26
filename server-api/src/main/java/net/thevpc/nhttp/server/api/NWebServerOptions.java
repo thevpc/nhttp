@@ -3,6 +3,7 @@ package net.thevpc.nhttp.server.api;
 public class NWebServerOptions implements Cloneable{
     private Integer port;
     private boolean reset;
+    private boolean ignoreExistingPidFile;
     private Boolean ssl;
     private Integer backlog;
     private Integer minConnexions;
@@ -15,6 +16,15 @@ public class NWebServerOptions implements Cloneable{
 
     public boolean isReset() {
         return reset;
+    }
+
+    public boolean isIgnoreExistingPidFile() {
+        return ignoreExistingPidFile;
+    }
+
+    public NWebServerOptions setIgnoreExistingPidFile(boolean ignoreExistingPidFile) {
+        this.ignoreExistingPidFile = ignoreExistingPidFile;
+        return this;
     }
 
     public String getPidFile() {
