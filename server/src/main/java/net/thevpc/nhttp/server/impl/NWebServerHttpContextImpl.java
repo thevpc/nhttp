@@ -321,7 +321,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
         String requiredStr = " (required "
                 + (m.length == 1 ? String.valueOf(m[0]) : Arrays.stream(m).map(Enum::name).collect(Collectors.joining(","))) + ")";
         throw new NWebHttpException(
-                "Not Allowed : [" + getMethod() + " ] " + requiredStr + " " + getPath() + requiredStr, new NWebErrorCode("HttpMethodNotAllowed", String.valueOf(c)), NHttpCode.METHOD_NOT_ALLOWED);
+                "Not Allowed : [" + getMethod() + " ] " + requiredStr + " " + getPath(), new NWebErrorCode("HttpMethodNotAllowed", String.valueOf(c)), NHttpCode.METHOD_NOT_ALLOWED);
     }
 
     @Override
