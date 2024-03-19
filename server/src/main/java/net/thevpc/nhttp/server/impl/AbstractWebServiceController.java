@@ -6,6 +6,7 @@ import com.sun.net.httpserver.HttpServer;
 import net.thevpc.nhttp.server.api.NWebHttpException;
 import net.thevpc.nhttp.server.api.NWebUserResolver;
 import net.thevpc.nhttp.server.api.NWebLogger;
+import net.thevpc.nhttp.server.error.NWebUnauthorizedSecurityException;
 import net.thevpc.nuts.util.NMsg;
 import net.thevpc.nuts.NSession;
 
@@ -57,6 +58,9 @@ public abstract class AbstractWebServiceController implements HttpHandler {
 
     public boolean isSimpleThrowable(Throwable ex) {
         if (ex instanceof NWebHttpException) {
+            return true;
+        }
+        if (ex instanceof NWebUnauthorizedSecurityException) {
             return true;
         }
         return false;
