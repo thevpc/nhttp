@@ -1,5 +1,6 @@
 package net.thevpc.nhttp.server.impl;
 
+import net.thevpc.nuts.util.*;
 import net.thevpc.nuts.web.NHttpCode;
 import net.thevpc.nuts.web.NHttpMethod;
 import com.sun.net.httpserver.HttpExchange;
@@ -10,16 +11,9 @@ import net.thevpc.nhttp.server.model.NWebErrorResult;
 import net.thevpc.nhttp.server.security.*;
 import net.thevpc.nhttp.server.api.NWebLogger;
 import net.thevpc.nhttp.server.util.JsonUtils;
-import net.thevpc.nuts.util.NBlankable;
-import net.thevpc.nuts.util.NMsg;
-import net.thevpc.nuts.util.NOptional;
 import net.thevpc.nuts.NSession;
 import net.thevpc.nuts.io.NCp;
-import net.thevpc.nuts.util.NStringMapFormat;
-import net.thevpc.nuts.util.NStringUtils;
-import net.thevpc.nuts.util.NUnsafeRunnable;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Instant;
@@ -175,18 +169,18 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
             sendError((NWebHttpException) ex);
         } else if (ex instanceof NoSuchElementException) {
             sendError(new NWebHttpException(ex.getMessage(),
-                    NWebErrorCodeAware.codeOf(ex).orElse(new NWebErrorCode("NotFound")), NHttpCode.NOT_FOUND));
+                    NMsgCodeAware.codeOf(ex).orElse(new NMsgCode("NotFound")), NHttpCode.NOT_FOUND));
         } else if (ex instanceof NWebUnauthorizedSecurityException) {
-            sendError(new NWebHttpException(ex.getMessage(), NWebErrorCodeAware.codeOf(ex).get(), NHttpCode.UNAUTHORIZED));
+            sendError(new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.UNAUTHORIZED));
         } else if (ex instanceof SecurityException) {
-            sendError(new NWebHttpException(ex.getMessage(), NWebErrorCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
-        } else if (ex instanceof ApplicationException) {
-            sendError(new NWebHttpException(ex.getMessage(), NWebErrorCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
-        } else if (ex instanceof NWebErrorCodeAware) {
-            sendError(new NWebHttpException(ex.getMessage(), NWebErrorCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
+            sendError(new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
+        } else if (ex instanceof NMsgCodeException) {
+            sendError(new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
+        } else if (ex instanceof NMsgCodeAware) {
+            sendError(new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
         } else {
             ex.printStackTrace();
-            sendError(new NWebHttpException(ex.getMessage(), NWebErrorCodeAware.codeOf(ex).orElse(new NWebErrorCode("Error")), NHttpCode.INTERNAL_SERVER_ERROR));
+            sendError(new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).orElse(new NMsgCode("Error")), NHttpCode.INTERNAL_SERVER_ERROR));
         }
     }
 
@@ -198,7 +192,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
         }
         NWebErrorResult o = new NWebErrorResult(message);
         NWebResponseHeaders z = new NWebResponseHeaders();
-        z.setErrorCode(ex.getAppErrorCode());
+        z.setErrorCode(ex.getNMsgCode());
         sendJson(o, ex.getHttpCode(), z);
     }
 
@@ -220,7 +214,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
             os.write(bytes);
             os.close();
         } catch (IOException e) {
-            throw new ApplicationException(new NWebErrorCode("IO.SendFailed"), "send byte failed", e);
+            throw new NMsgCodeException(session, new NMsgCode("IO.SendFailed"), NMsg.ofC("send byte failed : %s", e.toString()), e);
         }
     }
 
@@ -266,7 +260,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
                                 try {
                                     user = userResolver.loadUser(token);
                                 } catch (Exception e) {
-                                    throw new NWebUnauthorizedSecurityException(new NWebErrorCode("Security.InvalidToken"), e.toString());
+                                    throw new NWebUnauthorizedSecurityException(new NMsgCode("Security.InvalidToken"), e.toString());
                                 }
                                 if (user != null) {
                                     break;
@@ -276,19 +270,19 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
                     }
                 }
             } catch (RuntimeException ex) {
-                if (ex instanceof NWebErrorCodeAware) {
+                if (ex instanceof NMsgCodeAware) {
                     throw ex;
                 }
-                throw new ApplicationException(new NWebErrorCode("Security.AuthorizationFailed"), ex.toString(), ex);
+                throw new NMsgCodeException(session, new NMsgCode("Security.AuthorizationFailed"), NMsg.ofPlain(ex.toString()), ex);
             } catch (Throwable ex) {
-                throw new ApplicationException(new NWebErrorCode("Security.AuthorizationFailed"), ex.toString(), ex);
+                throw new NMsgCodeException(session, new NMsgCode("Security.AuthorizationFailed"), NMsg.ofPlain(ex.toString()), ex);
             }
         }
         if (user == null) {
             if (someToken) {
-                throw new NWebUnauthorizedSecurityException(new NWebErrorCode("Security.InvalidToken"), "invalid token");
+                throw new NWebUnauthorizedSecurityException(new NMsgCode("Security.InvalidToken"), "invalid token");
             } else {
-                throw new NWebUnauthorizedSecurityException(new NWebErrorCode("Security.MissingToken"), "missing token");
+                throw new NWebUnauthorizedSecurityException(new NMsgCode("Security.MissingToken"), "missing token");
             }
         }
         trace(Level.INFO, NMsg.ofC("authenticated %s %s", user.getId(), user.getUserName()));
@@ -321,12 +315,12 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
         String requiredStr = " (required "
                 + (m.length == 1 ? String.valueOf(m[0]) : Arrays.stream(m).map(Enum::name).collect(Collectors.joining(","))) + ")";
         throw new NWebHttpException(
-                "Not Allowed : [" + getMethod() + " ] " + requiredStr + " " + getPath(), new NWebErrorCode("HttpMethodNotAllowed", String.valueOf(c)), NHttpCode.METHOD_NOT_ALLOWED);
+                "Not Allowed : [" + getMethod() + " ] " + requiredStr + " " + getPath(), new NMsgCode("HttpMethodNotAllowed", String.valueOf(c)), NHttpCode.METHOD_NOT_ALLOWED);
     }
 
     @Override
     public NWebServerHttpContext throwNoFound() {
-        throw new NWebHttpException("Not Found : [" + getMethod() + "] " + getPath(), new NWebErrorCode("NotFound"), NHttpCode.NOT_FOUND);
+        throw new NWebHttpException("Not Found : [" + getMethod() + "] " + getPath(), new NMsgCode("NotFound"), NHttpCode.NOT_FOUND);
     }
 
     @Override

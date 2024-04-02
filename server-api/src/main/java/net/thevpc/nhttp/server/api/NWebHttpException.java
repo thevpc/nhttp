@@ -1,12 +1,14 @@
 package net.thevpc.nhttp.server.api;
 
+import net.thevpc.nuts.util.NMsgCode;
+import net.thevpc.nuts.util.NMsgCodeAware;
 import net.thevpc.nuts.web.NHttpCode;
 
-public class NWebHttpException extends RuntimeException implements NWebErrorCodeAware {
+public class NWebHttpException extends RuntimeException implements NMsgCodeAware {
     private NHttpCode httpCode;
-    private NWebErrorCode appErrorCode;
+    private NMsgCode appErrorCode;
 
-    public NWebHttpException(String message, NWebErrorCode appErrorCode, NHttpCode httpCode) {
+    public NWebHttpException(String message, NMsgCode appErrorCode, NHttpCode httpCode) {
         super(message);
         this.httpCode = httpCode;
         this.appErrorCode = appErrorCode;
@@ -16,7 +18,7 @@ public class NWebHttpException extends RuntimeException implements NWebErrorCode
         return httpCode;
     }
 
-    public NWebErrorCode getAppErrorCode() {
+    public NMsgCode getNMsgCode() {
         return appErrorCode;
     }
 }

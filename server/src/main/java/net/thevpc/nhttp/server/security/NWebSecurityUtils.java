@@ -1,7 +1,9 @@
 package net.thevpc.nhttp.server.security;
 
-import net.thevpc.nhttp.server.api.NWebErrorCode;
-import net.thevpc.nhttp.server.error.ApplicationException;
+import net.thevpc.nuts.NSession;
+import net.thevpc.nuts.util.NMsg;
+import net.thevpc.nuts.util.NMsgCode;
+import net.thevpc.nuts.util.NMsgCodeException;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -40,7 +42,7 @@ public class NWebSecurityUtils {
         return hexString.toString();
     }
 
-    public static String encryptString(String strToEncrypt, String secret) {
+    public static String encryptString(String strToEncrypt, String secret, NSession session) {
         try {
             //strToEncrypt must be multiple of 16 (bug in jdk11)
             byte[] bytes = strToEncrypt.getBytes(StandardCharsets.UTF_8);
@@ -58,21 +60,21 @@ public class NWebSecurityUtils {
             }
             bytes = out.toByteArray();
 
-            KeyInfo k = createKeyInfo(secret);
+            KeyInfo k = createKeyInfo(secret, session);
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.ENCRYPT_MODE, k.secretKey);
             return Base64.getEncoder().encodeToString(cipher.doFinal(bytes));
         } catch (Exception ex) {
-            throw new ApplicationException(new NWebErrorCode("Security.EncryptionFailed"),"encryption failed", ex);
+            throw new NMsgCodeException(session, new NMsgCode("Security.EncryptionFailed"), NMsg.ofC("encryption failed : %s", ex), ex);
         }
     }
 
-    public static String decryptString(String strToDecrypt, String secret) {
+    public static String decryptString(String strToDecrypt, String secret, NSession session) {
         if (secret == null || secret.trim().length() == 0) {
             throw new IllegalArgumentException("missing token");
         }
         try {
-            KeyInfo k = createKeyInfo(secret);
+            KeyInfo k = createKeyInfo(secret, session);
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, k.secretKey);
             byte[] bytes = cipher.doFinal(Base64.getDecoder().decode(strToDecrypt));
@@ -88,11 +90,11 @@ public class NWebSecurityUtils {
             bytes = Arrays.copyOfRange(bytes, 4, 4 + v);
             return new String(bytes);
         } catch (Exception ex) {
-            throw new ApplicationException(new NWebErrorCode("Security.DecryptionFailed"),"decryption failed", ex);
+            throw new NMsgCodeException(session, new NMsgCode("Security.DecryptionFailed"), NMsg.ofC("decryption failed : %s", ex), ex);
         }
     }
 
-    private static KeyInfo createKeyInfo(String password) {
+    private static KeyInfo createKeyInfo(String password, NSession session) {
         if (password == null || password.length() == 0) {
             password = "password";
         }
@@ -104,7 +106,9 @@ public class NWebSecurityUtils {
             k.key = sha.digest(k.key);
             k.secretKey = new SecretKeySpec(k.key, "AES");
         } catch (NoSuchAlgorithmException ex) {
-            throw new ApplicationException(new NWebErrorCode("Security.DecryptionFailed"),"encryption key building failed", ex);
+            throw new NMsgCodeException(session, new NMsgCode("Security.DecryptionFailed"),
+                    NMsg.ofC("encryption key building failed : %s", ex),
+                    ex);
         }
         return k;
     }

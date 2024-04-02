@@ -1,9 +1,11 @@
 package net.thevpc.nhttp.server.api;
 
 
+import net.thevpc.nuts.util.NMsgCode;
+
 public class NWebResponseHeaders {
     private String contentType;
-    private NWebErrorCode errorCode;
+    private NMsgCode errorCode;
 
     public String getContentType() {
         return contentType;
@@ -14,11 +16,11 @@ public class NWebResponseHeaders {
         return this;
     }
 
-    public NWebErrorCode getErrorCode() {
+    public NMsgCode getErrorCode() {
         return errorCode;
     }
 
-    public NWebResponseHeaders setErrorCode(NWebErrorCode errorCode) {
+    public NWebResponseHeaders setErrorCode(NMsgCode errorCode) {
         this.errorCode = errorCode;
         return this;
     }

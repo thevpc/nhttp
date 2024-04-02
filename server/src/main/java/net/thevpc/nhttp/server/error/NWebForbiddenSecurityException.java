@@ -1,16 +1,16 @@
 package net.thevpc.nhttp.server.error;
 
-import net.thevpc.nhttp.server.api.NWebErrorCode;
-import net.thevpc.nhttp.server.api.NWebErrorCodeAware;
+import net.thevpc.nuts.util.NMsgCode;
+import net.thevpc.nuts.util.NMsgCodeAware;
 
-public class NWebForbiddenSecurityException extends SecurityException implements NWebErrorCodeAware {
-    private NWebErrorCode code;
-    public NWebForbiddenSecurityException(NWebErrorCode code, String s) {
+public class NWebForbiddenSecurityException extends SecurityException implements NMsgCodeAware {
+    private NMsgCode code;
+    public NWebForbiddenSecurityException(NMsgCode code, String s) {
         super(s);
         this.code=code;
     }
 
-    public NWebErrorCode getAppErrorCode() {
+    public NMsgCode getNMsgCode() {
         return code;
     }
 }

@@ -1,6 +1,6 @@
 package net.thevpc.nhttp.server.security;
 
-import net.thevpc.nhttp.server.api.NWebErrorCode;
+import net.thevpc.nuts.util.NMsgCode;
 import net.thevpc.nhttp.server.error.NWebUnauthorizedSecurityException;
 import net.thevpc.nhttp.server.api.NWebToken;
 import net.thevpc.nhttp.server.api.NWebUser;
@@ -39,7 +39,7 @@ public class NWebSecurityContext {
     public static NWebSecurityContext currentRequired() {
         NWebSecurityContext t = current.get();
         if (t == null) {
-            throw new NWebUnauthorizedSecurityException(new NWebErrorCode("Security.Unauthorized"), "missing security context");
+            throw new NWebUnauthorizedSecurityException(new NMsgCode("Security.Unauthorized"), "missing security context");
         }
         return t;
     }
