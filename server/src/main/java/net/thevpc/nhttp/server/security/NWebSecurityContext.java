@@ -1,5 +1,6 @@
 package net.thevpc.nhttp.server.security;
 
+import net.thevpc.nuts.NSession;
 import net.thevpc.nuts.util.NMsgCode;
 import net.thevpc.nhttp.server.error.NWebUnauthorizedSecurityException;
 import net.thevpc.nhttp.server.api.NWebToken;
@@ -44,11 +45,11 @@ public class NWebSecurityContext {
         return t;
     }
 
-    public static void runWith(NWebSecurityContext a, NUnsafeRunnable callable) throws Throwable {
+    public static void runWith(NWebSecurityContext a, NUnsafeRunnable callable, NSession session) throws Throwable {
         NWebSecurityContext t = current.get();
         current.set(a);
         try {
-            callable.run();
+            callable.run(session);
         } finally {
             current.set(t);
         }

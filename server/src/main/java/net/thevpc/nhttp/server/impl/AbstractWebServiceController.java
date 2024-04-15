@@ -35,7 +35,7 @@ public abstract class AbstractWebServiceController implements HttpHandler {
         rc.trace(Level.INFO, NMsg.ofPlain("incoming call"));
         try {
 
-            rc.runWithUnsafe(() -> handle(rc));
+            rc.runWithUnsafe((session) -> handle(rc));
         } catch (Throwable ex) {
             if (isSimpleThrowable(ex)) {
                 rc.trace(Level.SEVERE, NMsg.ofC("Failed call (%s)", ex));

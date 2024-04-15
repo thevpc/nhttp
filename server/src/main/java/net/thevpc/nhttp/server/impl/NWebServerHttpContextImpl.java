@@ -358,7 +358,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
         NWebServerHttpContext t = NWebServerHttpContextHolder.current.get();
         NWebServerHttpContextHolder.current.set(this);
         try {
-            callable.run();
+            callable.run(session);
         } finally {
             NWebServerHttpContextHolder.current.set(t);
         }

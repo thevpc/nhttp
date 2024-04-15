@@ -211,7 +211,7 @@ public class DefaultNHttpServer implements NHttpServer {
         NWebUserResolver userResolver = runner.userResolver();
         try {
             new NWebServerHttpContextImpl(null, null, userResolver, session, logger)
-                    .runWithUnsafe(() -> {
+                    .runWithUnsafe((s) -> {
                         runner.initializeConfig();
                     });
         } catch (Throwable e) {
