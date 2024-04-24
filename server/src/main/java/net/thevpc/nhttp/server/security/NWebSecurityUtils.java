@@ -90,7 +90,7 @@ public class NWebSecurityUtils {
             bytes = Arrays.copyOfRange(bytes, 4, 4 + v);
             return new String(bytes);
         } catch (Exception ex) {
-            throw new NMsgCodeException(session, new NMsgCode("Security.DecryptionFailed"), NMsg.ofC("decryption failed : %s", ex), ex);
+                throw new NMsgCodeException(session, new NMsgCode("Security.DecryptionFailed"), NMsg.ofC("decryption failed : %s", ex), ex);
         }
     }
 
