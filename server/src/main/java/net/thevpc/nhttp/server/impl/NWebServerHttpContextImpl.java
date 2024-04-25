@@ -22,6 +22,7 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class NWebServerHttpContextImpl implements NWebServerHttpContext {
+
     private HttpServer server;
     private HttpExchange httpExchange;
     private NSession session;
@@ -35,10 +36,9 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     private Map<String, String> queryParams;
     private NWebLogger logger;
 
-
     public NWebServerHttpContextImpl(HttpServer server, HttpExchange httpExchange,
-                                     NWebUserResolver userResolver,
-                                     NSession session, NWebLogger logger) {
+            NWebUserResolver userResolver,
+            NSession session, NWebLogger logger) {
         this.server = server;
         this.userResolver = userResolver;
         this.httpExchange = httpExchange;
@@ -167,20 +167,42 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     public void sendError(Throwable ex) {
         if (ex instanceof NWebHttpException) {
             sendError((NWebHttpException) ex);
+        } else {
+            NWebHttpException r = wrapException(ex);
+            if (r != null) {
+                sendError(r);
+            } else {
+                sendError(wrapDefaultException(ex));
+            }
+        }
+    }
+
+    protected NWebHttpException wrapException(Throwable ex) {
+        return null;
+    }
+
+    private NWebHttpException wrapDefaultException(Throwable ex) {
+        if (ex instanceof NWebHttpException) {
+            return ((NWebHttpException) ex);
         } else if (ex instanceof NoSuchElementException) {
-            sendError(new NWebHttpException(ex.getMessage(),
+            return (new NWebHttpException(ex.getMessage(),
                     NMsgCodeAware.codeOf(ex).orElse(new NMsgCode("NotFound")), NHttpCode.NOT_FOUND));
         } else if (ex instanceof NWebUnauthorizedSecurityException) {
-            sendError(new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.UNAUTHORIZED));
+            return (new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.UNAUTHORIZED));
         } else if (ex instanceof SecurityException) {
-            sendError(new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
+            return (new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
         } else if (ex instanceof NMsgCodeException) {
-            sendError(new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
+            return (new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
         } else if (ex instanceof NMsgCodeAware) {
-            sendError(new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
+            return (new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
         } else {
-            ex.printStackTrace();
-            sendError(new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).orElse(new NMsgCode("Error")), NHttpCode.INTERNAL_SERVER_ERROR));
+            NOptional<NMsgCode> codeOf = NMsgCodeAware.codeOf(ex);
+            if (codeOf.isPresent()) {
+                return (new NWebHttpException(ex.getMessage(), codeOf.get(), NHttpCode.BAD_REQUEST));
+            } else {
+                //ex.printStackTrace();
+                return (new NWebHttpException(ex.getMessage(), new NMsgCode("Error"), NHttpCode.INTERNAL_SERVER_ERROR));
+            }
         }
     }
 
