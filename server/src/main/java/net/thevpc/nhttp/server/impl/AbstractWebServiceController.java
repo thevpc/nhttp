@@ -34,7 +34,6 @@ public abstract class AbstractWebServiceController implements HttpHandler {
         NWebServerHttpContextImpl rc = new NWebServerHttpContextImpl(server, t, userResolver, session, logger);
         rc.trace(Level.INFO, NMsg.ofPlain("incoming call"));
         try {
-
             rc.runWithUnsafe((session) -> handle(rc));
         } catch (Throwable ex) {
             if (isSimpleThrowable(ex)) {

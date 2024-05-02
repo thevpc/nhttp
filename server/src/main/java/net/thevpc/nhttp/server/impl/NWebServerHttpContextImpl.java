@@ -186,7 +186,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
             return ((NWebHttpException) ex);
         } else if (ex instanceof NoSuchElementException) {
             return (new NWebHttpException(ex.getMessage(),
-                    NMsgCodeAware.codeOf(ex).orElse(new NMsgCode("NotFound")), NHttpCode.NOT_FOUND));
+                    NMsgCodeAware.codeOf(ex).orElse(new NMsgCode("NotFound",ex.getMessage())), NHttpCode.NOT_FOUND));
         } else if (ex instanceof NWebUnauthorizedSecurityException) {
             return (new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.UNAUTHORIZED));
         } else if (ex instanceof SecurityException) {

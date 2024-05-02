@@ -58,6 +58,11 @@ public class DefaultNHttpServer implements NHttpServer {
         this.log = NLog.of(DefaultNHttpServer.class, session);
     }
 
+    public DefaultNHttpServer setLogger(NWebLogger logger) {
+        this.logger = logger;
+        return this;
+    }
+
     private File normalizedFile(String str) {
         File file = new File(str);
         try {
@@ -300,7 +305,9 @@ public class DefaultNHttpServer implements NHttpServer {
     }
 
     private void prepareLogFile() {
-        logger = new NWebAppLoggerDefault(logFile, session);
+        if(logger==null) {
+            logger = new NWebAppLoggerDefault(logFile, session);
+        }
         if (getHeader() != null) {
             logger.out(getHeader());
         }
