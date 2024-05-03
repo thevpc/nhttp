@@ -1,9 +1,10 @@
 package net.thevpc.nhttp.server.api;
 
 
+import net.thevpc.nuts.NDTO;
 import net.thevpc.nuts.util.NMsgCode;
 
-public class NWebResponseHeaders {
+public class NWebResponseHeaders implements NDTO {
     private String contentType;
     private NMsgCode errorCode;
 

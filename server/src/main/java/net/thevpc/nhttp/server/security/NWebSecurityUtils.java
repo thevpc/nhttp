@@ -1,9 +1,7 @@
 package net.thevpc.nhttp.server.security;
 
 import net.thevpc.nuts.NSession;
-import net.thevpc.nuts.util.NMsg;
-import net.thevpc.nuts.util.NMsgCode;
-import net.thevpc.nuts.util.NMsgCodeException;
+import net.thevpc.nuts.util.*;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -70,9 +68,7 @@ public class NWebSecurityUtils {
     }
 
     public static String decryptString(String strToDecrypt, String secret, NSession session) {
-        if (secret == null || secret.trim().length() == 0) {
-            throw new IllegalArgumentException("missing token");
-        }
+        NAssert.requireNonBlank(secret,"secret");
         try {
             KeyInfo k = createKeyInfo(secret, session);
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");

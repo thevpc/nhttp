@@ -9,6 +9,7 @@ import net.thevpc.nhttp.server.api.NWebLogger;
 import net.thevpc.nhttp.server.error.NWebUnauthorizedSecurityException;
 import net.thevpc.nuts.util.NMsg;
 import net.thevpc.nuts.NSession;
+import net.thevpc.nuts.util.NMsgCodeException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -57,6 +58,9 @@ public abstract class AbstractWebServiceController implements HttpHandler {
 
     public boolean isSimpleThrowable(Throwable ex) {
         if (ex instanceof NWebHttpException) {
+            return true;
+        }
+        if (ex instanceof NMsgCodeException) {
             return true;
         }
         if (ex instanceof NWebUnauthorizedSecurityException) {

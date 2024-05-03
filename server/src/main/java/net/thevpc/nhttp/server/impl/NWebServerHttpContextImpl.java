@@ -194,7 +194,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
         } else if (ex instanceof NMsgCodeException) {
             return (new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
         } else if (ex instanceof NMsgCodeAware) {
-            return (new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
+            return (new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.BAD_REQUEST));
         } else {
             NOptional<NMsgCode> codeOf = NMsgCodeAware.codeOf(ex);
             if (codeOf.isPresent()) {
@@ -212,9 +212,14 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
         if (message == null) {
             message = "Error";
         }
+        NMsgCode mcode = ex.getNMsgCode();
         NWebErrorResult o = new NWebErrorResult(message);
+        if(mcode!=null){
+            o.setCode(mcode.getCode());
+            o.setParams(mcode.getParams());
+        }
         NWebResponseHeaders z = new NWebResponseHeaders();
-        z.setErrorCode(ex.getNMsgCode());
+        z.setErrorCode(mcode);
         sendJson(o, ex.getHttpCode(), z);
     }
 
