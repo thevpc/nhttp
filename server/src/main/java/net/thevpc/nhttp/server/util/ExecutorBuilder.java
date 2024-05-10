@@ -34,6 +34,15 @@ public class ExecutorBuilder {
         return this;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public ExecutorBuilder setName(String name) {
+        this.name = name;
+        return this;
+    }
+
     private NLiteral _get(String prefix, String name, Map<String, String> props) {
         return NLiteral.of(props.get(_id(prefix, name)));
     }
@@ -96,13 +105,25 @@ public class ExecutorBuilder {
             return te;
         }else{
             //return Executors.newWorkStealingPool();
-            return Executors.newCachedThreadPool();
+//            return Executors.newCachedThreadPool();
+            return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+                    10L, TimeUnit.SECONDS,
+                    new SynchronousQueue<Runnable>(),
+                    new NamedThreadFactory(name),
+                    new RejectedExecutionHandler() {
+                        @Override
+                        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+                            String rn = r.toString();
+                            LOG.log(Level.SEVERE, "{0} REJECTED THREAD {1}", new Object[]{name, rn});
+                        }
+                    }
+                    );
         }
         //return Executors.newCachedThreadPool();
     }
 
     private void monitorThreadPool(ThreadPoolExecutor te) {
-        new Thread() {
+        Thread t = new Thread(name+"-ThreadPoolMonitor") {
             @Override
             public void run() {
                 while (true) {
@@ -114,7 +135,9 @@ public class ExecutorBuilder {
                     //System.out.println("STATE ::: PoolSize=" + te);
                 }
             }
-        }.start();
+        };
+        t.setDaemon(true);
+        t.start();
     }
 
     public Integer getMinConnexions() {

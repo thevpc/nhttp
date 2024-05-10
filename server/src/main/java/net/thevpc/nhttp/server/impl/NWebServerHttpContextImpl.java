@@ -1,5 +1,6 @@
 package net.thevpc.nhttp.server.impl;
 
+import net.thevpc.nuts.text.NTextStyle;
 import net.thevpc.nuts.util.*;
 import net.thevpc.nuts.web.NHttpCode;
 import net.thevpc.nuts.web.NHttpMethod;
@@ -320,13 +321,16 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
 
     @Override
     public void trace(Level level, NMsg msg) {
+        Runtime rt = Runtime.getRuntime();
+        double m=((rt.totalMemory()-rt.freeMemory())*100.0/rt.maxMemory());
         logger.out(NMsg.ofC(
-                "[%s] %8s %s %6s %s %s",
+                "[%s][M%.3f%%] %8s %s %6s %s %s",
                 Instant.now(),
+                m,
                 level,
                 httpExchange.getRemoteAddress(),
-                httpExchange.getRequestMethod(),
-                httpExchange.getRequestURI(),
+                NMsg.ofStyled(httpExchange.getRequestMethod(), NTextStyle.primary1()),
+                NMsg.ofStyled(httpExchange.getRequestURI().toString(), NTextStyle.path()),
                 msg
         ));
     }

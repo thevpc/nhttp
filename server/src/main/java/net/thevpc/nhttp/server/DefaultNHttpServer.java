@@ -44,6 +44,7 @@ public class DefaultNHttpServer implements NHttpServer {
     private NWebServerRunner runner;
     private NWebLogger logger;
     private File logFile;
+    private long logFileMaxSize;
     private String storeCredentials;
     private NMsg header;
     private String defaultLogFile;
@@ -62,6 +63,7 @@ public class DefaultNHttpServer implements NHttpServer {
         this.logger = logger;
         return this;
     }
+
 
     private File normalizedFile(String str) {
         File file = new File(str);
@@ -160,6 +162,7 @@ public class DefaultNHttpServer implements NHttpServer {
                 logFile2 = "server.log";
             }
             this.logFile = normalizedFile(logFile2);
+            this.logFileMaxSize = effectiveOptions.getLogFileMaxSize() == null ? -1 : effectiveOptions.getLogFileMaxSize();
             this.effectiveOptions.setLogFile(this.logFile.getAbsolutePath());
             String pidFilePath = this.effectiveOptions.getPidFile();
             if (NBlankable.isBlank(pidFilePath)) {
@@ -194,6 +197,7 @@ public class DefaultNHttpServer implements NHttpServer {
         prepareLogFile();
         preparePidFile();
         this.executor = new ExecutorBuilder()
+                .setName("HTTPServer")
                 .setIdlTimeSeconds(effectiveOptions.getIdlTimeSeconds())
                 .setQueueSize(effectiveOptions.getQueueSize())
                 .setMaxConnexions(effectiveOptions.getMaxConnexions())
@@ -305,8 +309,8 @@ public class DefaultNHttpServer implements NHttpServer {
     }
 
     private void prepareLogFile() {
-        if(logger==null) {
-            logger = new NWebAppLoggerDefault(logFile, session);
+        if (logger == null) {
+            logger = new NWebAppLoggerDefault(logFile, logFileMaxSize, session);
         }
         if (getHeader() != null) {
             logger.out(getHeader());

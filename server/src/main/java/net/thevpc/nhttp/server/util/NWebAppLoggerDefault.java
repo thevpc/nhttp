@@ -12,25 +12,31 @@ public class NWebAppLoggerDefault implements NWebLogger {
     private NSession session;
     private NTexts txt;
     private File file;
+    private File roll1;
+    private long maxFileSize = 1024;
     private long fileSize;
 
-    public NWebAppLoggerDefault(File file, NSession session) {
+    public NWebAppLoggerDefault(File file, long maxFileSize,NSession session) {
         try {
             this.file = file.getCanonicalFile();
         } catch (IOException e) {
             this.file = file.getAbsoluteFile();
         }
+        this.maxFileSize=maxFileSize<=0?Long.MAX_VALUE:maxFileSize;
+        this.roll1 = new File(this.file.getParent(), this.file.getName() + ".1");
         this.session = session;
         this.txt = NTexts.of(session);
     }
 
-    private PrintStream _out() {
+    private synchronized void open() {
         if (out == null) {
             if (this.file.getParentFile() != null) {
                 this.file.getParentFile().mkdirs();
             }
-            if(file.exists()){
-                fileSize=file.length();
+            if (file.exists()) {
+                fileSize = file.length();
+            } else {
+                fileSize = 0;
             }
             try {
                 out = new PrintStream(new FileOutputStream(file, true));
@@ -38,6 +44,10 @@ public class NWebAppLoggerDefault implements NWebLogger {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    private PrintStream _out() {
+        open();
         return out;
     }
 
@@ -46,16 +56,22 @@ public class NWebAppLoggerDefault implements NWebLogger {
         session.out().println(msg);
         _out(msg);
     }
+
     @Override
     public synchronized void err(NMsg msg) {
         session.err().println(msg);
         _out(msg);
     }
 
-    private void _out(NMsg msg){
+    private void _out(NMsg msg) {
         String string = txt.ofText(msg).filteredText();
-        fileSize+=string.getBytes().length;
+        long newBytesCount = string.getBytes().length;
+        if (fileSize >= maxFileSize || fileSize + newBytesCount >= maxFileSize) {
+            roll();
+        }
+        fileSize += newBytesCount;
         _out().println(string);
+
     }
 
     public String getFilePath() {
@@ -65,6 +81,41 @@ public class NWebAppLoggerDefault implements NWebLogger {
     @Override
     public String toString() {
         return getFilePath();
+    }
+
+    public synchronized void roll() {
+        close();
+        try {
+            if (this.roll1.exists()) {
+                this.roll1.delete();
+            }
+        } catch (Exception e) {
+            //
+        }
+        try {
+            file.renameTo(this.roll1);
+        } catch (Exception e) {
+            //
+        }
+        try {
+            if (file.exists()) {
+                file.delete();
+            }
+        } catch (Exception e) {
+            //
+        }
+        open();
+    }
+
+    public synchronized void close() {
+        if (out != null) {
+            try {
+                out.close();
+            } catch (Exception e) {
+                //
+            }
+            out=null;
+        }
     }
 }
 

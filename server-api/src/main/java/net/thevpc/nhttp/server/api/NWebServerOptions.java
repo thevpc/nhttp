@@ -12,6 +12,7 @@ public class NWebServerOptions implements Cloneable{
     private Integer idlTimeSeconds;
     private String pidFile;
     private String logFile;
+    private Long logFileMaxSize;
     private String contextPath;
 
     public boolean isReset() {
@@ -131,6 +132,15 @@ public class NWebServerOptions implements Cloneable{
 
     public NWebServerOptions setContextPath(String contextPath) {
         this.contextPath = contextPath;
+        return this;
+    }
+
+    public Long getLogFileMaxSize() {
+        return logFileMaxSize;
+    }
+
+    public NWebServerOptions setLogFileMaxSize(Long logFileMaxSize) {
+        this.logFileMaxSize = logFileMaxSize;
         return this;
     }
 }
