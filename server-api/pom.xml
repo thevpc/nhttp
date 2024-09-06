@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>net.thevpc.nhttp</groupId>
     <artifactId>nhttp-server-api</artifactId>
-    <version>0.8.4.0</version>
+    <version>0.8.5.0</version>
     <packaging>jar</packaging><!-- small changes, do not require version change, didn't updated the version-->
     <name>NHTTP Server API Support</name>
     <url>https://github.com/thevpc/nhttp</url>
@@ -60,8 +60,8 @@
     <dependencies>
         <dependency>
             <groupId>net.thevpc.nuts</groupId>
-            <artifactId>nuts</artifactId>
-            <version>0.8.4</version>
+            <artifactId>nuts-api</artifactId>
+            <version>0.8.5</version>
         </dependency>
     </dependencies>
     <distributionManagement>

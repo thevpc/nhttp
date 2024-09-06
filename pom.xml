@@ -6,7 +6,7 @@
     <groupId>net.thevpc.nhttp</groupId>
     <artifactId>nhttp-builder</artifactId>
     <name>NHTTP Server Builder</name>
-    <version>0.8.4.0</version>
+    <version>0.8.5.0</version>
     <packaging>pom</packaging>
     <modules>
         <module>server-api</module>
