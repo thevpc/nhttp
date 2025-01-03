@@ -17,7 +17,6 @@ import net.thevpc.nuts.text.NTextStyle;
 import net.thevpc.nuts.log.NLog;
 import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.util.NMsg;
-import net.thevpc.nuts.env.NPlatformFamily;
 import net.thevpc.nuts.util.NStringUtils;
 
 import javax.net.ssl.*;
@@ -56,7 +55,7 @@ public class DefaultNHttpServer implements NHttpServer {
         this.session = session;
         this.options = options;
         this.runner = runner;
-        this.log = NLog.of(DefaultNHttpServer.class, session);
+        this.log = NLog.of(DefaultNHttpServer.class);
     }
 
     public DefaultNHttpServer setLogger(NWebLogger logger) {
@@ -92,15 +91,15 @@ public class DefaultNHttpServer implements NHttpServer {
 
     public void genkeypair() {
         NPath storeJks = getStoreJks();
-        List<NPlatformLocation> java = NPlatforms.of(session).findPlatforms(NPlatformFamily.JAVA).toList();
+        List<NPlatformLocation> java = NWorkspace.of().findPlatforms(NPlatformFamily.JAVA).toList();
         NPath keyToolOk = null;
         for (NPlatformLocation j : java) {
-            NVersion jVersion = NVersion.of(j.getVersion()).get();
+            NVersion jVersion = NVersion.of(j.getVersion());
             if (jVersion.compareTo("1.8") >= 0
                     && jVersion.compareTo("1.9") < 0
                     && "jdk".equals(j.getPackaging())
             ) {
-                NPath keyTool = NPath.of(j.getPath(), session).resolve("bin/keytool");
+                NPath keyTool = NPath.of(j.getPath()).resolve("bin/keytool");
                 if (keyTool.isRegularFile()) {
                     keyToolOk = keyTool;
                     break;
@@ -109,7 +108,7 @@ public class DefaultNHttpServer implements NHttpServer {
         }
 
         String keytoolCmd = keyToolOk == null ? "keytool" : keyToolOk.toString();
-        NExecCmd elist = NExecCmd.of(session)
+        NExecCmd elist = NExecCmd.of()
                 .addCommand(
                         keytoolCmd,
                         "-list",
@@ -126,7 +125,7 @@ public class DefaultNHttpServer implements NHttpServer {
             //found
         } else {
             storeJks.mkParentDirs();
-            NExecCmd.of(session)
+            NExecCmd.of()
                     .system()
                     .addCommand(
                             keytoolCmd,
@@ -145,7 +144,7 @@ public class DefaultNHttpServer implements NHttpServer {
     }
 
     private NPath getStoreJks() {
-        return session.getAppVarFolder().resolve("app-store.jks");
+        return NApp.of().getVarFolder().resolve("app-store.jks");
     }
 
     private void compile() {
@@ -220,7 +219,7 @@ public class DefaultNHttpServer implements NHttpServer {
         NWebUserResolver userResolver = runner.userResolver();
         try {
             new NWebServerHttpContextImpl(null, null, userResolver, session, logger)
-                    .runWithUnsafe((s) -> {
+                    .runWithUnsafe(() -> {
                         runner.initializeConfig();
                     });
         } catch (Throwable e) {
@@ -334,7 +333,7 @@ public class DefaultNHttpServer implements NHttpServer {
                     }
                     Files.write(pidFile.toPath(), (pid + "\n").getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
                 } catch (IOException e) {
-                    throw new NIOException(session, e);
+                    throw new NIOException(e);
                 }
                 pidFile.deleteOnExit();
             } else {
@@ -353,7 +352,7 @@ public class DefaultNHttpServer implements NHttpServer {
                     }
                     Files.write(pidFile.toPath(), (pid + "\n").getBytes(), StandardOpenOption.CREATE_NEW);
                 } catch (IOException e) {
-                    throw new NIOException(session, e);
+                    throw new NIOException(e);
                 }
                 pidFile.deleteOnExit();
             }

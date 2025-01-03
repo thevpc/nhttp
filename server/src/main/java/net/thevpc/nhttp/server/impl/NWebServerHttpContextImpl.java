@@ -38,8 +38,8 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     private NWebLogger logger;
 
     public NWebServerHttpContextImpl(HttpServer server, HttpExchange httpExchange,
-            NWebUserResolver userResolver,
-            NSession session, NWebLogger logger) {
+                                     NWebUserResolver userResolver,
+                                     NSession session, NWebLogger logger) {
         this.server = server;
         this.userResolver = userResolver;
         this.httpExchange = httpExchange;
@@ -105,7 +105,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     public String getBodyAsString() {
         if (requestBody == null) {
             try {
-                requestBody = NCp.of(session).from(httpExchange.getRequestBody()).getByteArrayResult();
+                requestBody = NCp.of().from(httpExchange.getRequestBody()).getByteArrayResult();
             } catch (RuntimeException e) {
                 requestBody = new byte[0];
                 throw e;
@@ -187,7 +187,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
             return ((NWebHttpException) ex);
         } else if (ex instanceof NoSuchElementException) {
             return (new NWebHttpException(ex.getMessage(),
-                    NMsgCodeAware.codeOf(ex).orElse(new NMsgCode("NotFound",ex.getMessage())), NHttpCode.NOT_FOUND));
+                    NMsgCodeAware.codeOf(ex).orElse(new NMsgCode("NotFound", ex.getMessage())), NHttpCode.NOT_FOUND));
         } else if (ex instanceof NWebUnauthorizedSecurityException) {
             return (new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.UNAUTHORIZED));
         } else if (ex instanceof SecurityException) {
@@ -215,7 +215,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
         }
         NMsgCode mcode = ex.getNMsgCode();
         NWebErrorResult o = new NWebErrorResult(message);
-        if(mcode!=null){
+        if (mcode != null) {
             o.setCode(mcode.getCode());
             o.setParams(mcode.getParams());
         }
@@ -242,7 +242,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
             os.write(bytes);
             os.close();
         } catch (IOException e) {
-            throw new NMsgCodeException(session, new NMsgCode("IO.SendFailed"), NMsg.ofC("send byte failed : %s", e.toString()), e);
+            throw new NMsgCodeException(new NMsgCode("IO.SendFailed"), NMsg.ofC("send byte failed : %s", e.toString()), e);
         }
     }
 
@@ -301,9 +301,9 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
                 if (ex instanceof NMsgCodeAware) {
                     throw ex;
                 }
-                throw new NMsgCodeException(session, new NMsgCode("Security.AuthorizationFailed"), NMsg.ofPlain(ex.toString()), ex);
+                throw new NMsgCodeException(new NMsgCode("Security.AuthorizationFailed"), NMsg.ofPlain(ex.toString()), ex);
             } catch (Throwable ex) {
-                throw new NMsgCodeException(session, new NMsgCode("Security.AuthorizationFailed"), NMsg.ofPlain(ex.toString()), ex);
+                throw new NMsgCodeException(new NMsgCode("Security.AuthorizationFailed"), NMsg.ofPlain(ex.toString()), ex);
             }
         }
         if (user == null) {
@@ -322,7 +322,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     @Override
     public void trace(Level level, NMsg msg) {
         Runtime rt = Runtime.getRuntime();
-        double m=((rt.totalMemory()-rt.freeMemory())*100.0/rt.maxMemory());
+        double m = ((rt.totalMemory() - rt.freeMemory()) * 100.0 / rt.maxMemory());
         logger.out(NMsg.ofC(
                 "[%s][M%.3f%%] %8s %s %6s %s %s",
                 Instant.now(),
@@ -389,7 +389,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
         NWebServerHttpContext t = NWebServerHttpContextHolder.current.get();
         NWebServerHttpContextHolder.current.set(this);
         try {
-            callable.run(session);
+            callable.run();
         } finally {
             NWebServerHttpContextHolder.current.set(t);
         }

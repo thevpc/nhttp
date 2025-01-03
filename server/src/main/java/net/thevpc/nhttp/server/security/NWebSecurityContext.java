@@ -49,7 +49,7 @@ public class NWebSecurityContext {
         NWebSecurityContext t = current.get();
         current.set(a);
         try {
-            callable.run(session);
+            callable.run();
         } finally {
             current.set(t);
         }

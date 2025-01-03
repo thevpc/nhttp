@@ -25,7 +25,7 @@ public class NWebAppLoggerDefault implements NWebLogger {
         this.maxFileSize=maxFileSize<=0?Long.MAX_VALUE:maxFileSize;
         this.roll1 = new File(this.file.getParent(), this.file.getName() + ".1");
         this.session = session;
-        this.txt = NTexts.of(session);
+        this.txt = NTexts.of();
     }
 
     private synchronized void open() {
@@ -64,7 +64,7 @@ public class NWebAppLoggerDefault implements NWebLogger {
     }
 
     private void _out(NMsg msg) {
-        String string = txt.ofText(msg).filteredText();
+        String string = txt.of(msg).filteredText();
         long newBytesCount = string.getBytes().length;
         if (fileSize >= maxFileSize || fileSize + newBytesCount >= maxFileSize) {
             roll();

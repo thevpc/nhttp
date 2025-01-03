@@ -34,26 +34,28 @@ public abstract class AbstractWebServiceController implements HttpHandler {
     public void handle(HttpExchange t) {
         NWebServerHttpContextImpl rc = new NWebServerHttpContextImpl(server, t, userResolver, session, logger);
         rc.trace(Level.INFO, NMsg.ofPlain("incoming call"));
-        try {
-            rc.runWithUnsafe((session) -> handle(rc));
-        } catch (Throwable ex) {
-            if (isSimpleThrowable(ex)) {
-                rc.trace(Level.SEVERE, NMsg.ofC("Failed call (%s)", ex));
-            } else {
-                StringBuilder sb = new StringBuilder();
-                try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-                    try (PrintStream pos = new PrintStream(bos)) {
-                        ex.printStackTrace(pos);
-                        pos.flush();
+        session.runWith(() -> {
+            try {
+                rc.runWithUnsafe(() -> handle(rc));
+            } catch (Throwable ex) {
+                if (isSimpleThrowable(ex)) {
+                    rc.trace(Level.SEVERE, NMsg.ofC("Failed call (%s)", ex));
+                } else {
+                    StringBuilder sb = new StringBuilder();
+                    try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                        try (PrintStream pos = new PrintStream(bos)) {
+                            ex.printStackTrace(pos);
+                            pos.flush();
+                        }
+                        sb.append(bos.toString());
+                    } catch (IOException ex2) {
+                        //
                     }
-                    sb.append(bos.toString());
-                } catch (IOException ex2) {
-                    //
+                    rc.trace(Level.SEVERE, NMsg.ofC("Failed call (%s) : %s", ex, sb.toString()));
                 }
-                rc.trace(Level.SEVERE, NMsg.ofC("Failed call (%s) : %s", ex, sb.toString()));
+                rc.sendError(ex);
             }
-            rc.sendError(ex);
-        }
+        });
     }
 
     public boolean isSimpleThrowable(Throwable ex) {

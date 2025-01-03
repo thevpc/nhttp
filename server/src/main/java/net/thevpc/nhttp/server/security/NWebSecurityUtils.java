@@ -63,7 +63,7 @@ public class NWebSecurityUtils {
             cipher.init(Cipher.ENCRYPT_MODE, k.secretKey);
             return Base64.getEncoder().encodeToString(cipher.doFinal(bytes));
         } catch (Exception ex) {
-            throw new NMsgCodeException(session, new NMsgCode("Security.EncryptionFailed"), NMsg.ofC("encryption failed : %s", ex), ex);
+            throw new NMsgCodeException(new NMsgCode("Security.EncryptionFailed"), NMsg.ofC("encryption failed : %s", ex), ex);
         }
     }
 
@@ -86,7 +86,7 @@ public class NWebSecurityUtils {
             bytes = Arrays.copyOfRange(bytes, 4, 4 + v);
             return new String(bytes);
         } catch (Exception ex) {
-                throw new NMsgCodeException(session, new NMsgCode("Security.DecryptionFailed"), NMsg.ofC("decryption failed : %s", ex), ex);
+                throw new NMsgCodeException(new NMsgCode("Security.DecryptionFailed"), NMsg.ofC("decryption failed : %s", ex), ex);
         }
     }
 
@@ -102,7 +102,7 @@ public class NWebSecurityUtils {
             k.key = sha.digest(k.key);
             k.secretKey = new SecretKeySpec(k.key, "AES");
         } catch (NoSuchAlgorithmException ex) {
-            throw new NMsgCodeException(session, new NMsgCode("Security.DecryptionFailed"),
+            throw new NMsgCodeException(new NMsgCode("Security.DecryptionFailed"),
                     NMsg.ofC("encryption key building failed : %s", ex),
                     ex);
         }
