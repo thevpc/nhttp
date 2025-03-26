@@ -48,9 +48,9 @@ class HttpServletRequestImpl implements HttpServletRequest {
     public long getDateHeader(String s) {
         NLiteral li = NLiteral.of(getHeader(s));
         if (li.isLong()) {
-            return li.asLong().get();
+            return li.asLongValue().get();
         }
-        String ss = li.asString().orNull();
+        String ss = li.asStringValue().orNull();
         if (NBlankable.isBlank(ss)) {
             return 0;
         }
@@ -90,11 +90,11 @@ class HttpServletRequestImpl implements HttpServletRequest {
 
     @Override
     public int getIntHeader(String s) {
-        return NLiteral.of(getHeader(s)).asInt().orElse(0);
+        return NLiteral.of(getHeader(s)).asIntValue().orElse(0);
     }
 
     public long getLongHeader(String s) {
-        return NLiteral.of(getHeader(s)).asLong().orElse(0L);
+        return NLiteral.of(getHeader(s)).asLongValue().orElse(0L);
     }
 
     @Override
