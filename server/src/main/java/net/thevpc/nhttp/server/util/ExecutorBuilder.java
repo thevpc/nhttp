@@ -27,10 +27,10 @@ public class ExecutorBuilder {
         if (props == null) {
             return this;
         }
-        this.setMinConnexions(_get(prefix, "minConnexions", props).asIntValue().orNull());
-        this.setMaxConnexions(_get(prefix, "maxConnexions", props).asIntValue().orNull());
-        this.setQueueSize(_get(prefix, "queueSize", props).asIntValue().orNull());
-        this.setIdlTimeSeconds(_get(prefix, "idleTimeSeconds", props).asIntValue().orNull());
+        this.setMinConnexions(_get(prefix, "minConnexions", props).asInt().orNull());
+        this.setMaxConnexions(_get(prefix, "maxConnexions", props).asInt().orNull());
+        this.setQueueSize(_get(prefix, "queueSize", props).asInt().orNull());
+        this.setIdlTimeSeconds(_get(prefix, "idleTimeSeconds", props).asInt().orNull());
         return this;
     }
 
