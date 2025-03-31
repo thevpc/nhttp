@@ -268,4 +268,14 @@ public abstract class NWebServerHttpContextAdapter implements NWebServerHttpCont
     public void close() {
         base().close();
     }
+
+    @Override
+    public NWebHttpException wrapException(Throwable ex) {
+        return base().wrapException(ex);
+    }
+
+    @Override
+    public boolean isResponseSent() {
+        return base().isResponseSent();
+    }
 }

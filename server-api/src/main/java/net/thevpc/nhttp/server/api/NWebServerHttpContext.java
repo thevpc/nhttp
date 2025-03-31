@@ -38,6 +38,8 @@ public interface NWebServerHttpContext extends AutoCloseable {
 
     String getPath();
 
+    NWebHttpException wrapException(Throwable ex);
+
     NWebServerHttpContext setResponseContentType(String contentType);
 
     NWebServerHttpContext setErrorCode(NMsgCode errorCode);
@@ -117,4 +119,6 @@ public interface NWebServerHttpContext extends AutoCloseable {
     NWebServerHttpContext setErrorResponse(Throwable ex);
 
     void close();
+
+    boolean isResponseSent();
 }

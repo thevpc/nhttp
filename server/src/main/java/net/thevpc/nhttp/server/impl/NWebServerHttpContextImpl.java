@@ -1,6 +1,7 @@
 package net.thevpc.nhttp.server.impl;
 
 import com.sun.net.httpserver.Headers;
+import net.thevpc.nuts.NIllegalArgumentException;
 import net.thevpc.nuts.format.NContentType;
 import net.thevpc.nuts.io.*;
 import net.thevpc.nuts.reserved.optional.NDetachedEmptyOptionalException;
@@ -48,6 +49,8 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     private String contentType = null;
     private Object responseObject;
     private NWebServerHttpContextImpl ctx;
+    private boolean responseHeadersSent;
+    int maxLineLength = 1024 * 1024;
 
     public NWebServerHttpContextImpl(HttpServer server, HttpExchange httpExchange,
                                      NWebUserResolver userResolver,
@@ -184,7 +187,21 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
         return httpExchange.getRequestURI().getPath();
     }
 
-    protected NWebHttpException wrapException(Throwable ex) {
+    public NWebHttpException wrapException(Throwable ex) {
+        if (ex == null) {
+            return new NWebHttpException("error", new NMsgCode("ERROR"), NHttpCode.BAD_REQUEST);
+        }
+        if (ex instanceof NWebHttpException) {
+            return (NWebHttpException) ex;
+        }
+        NWebHttpException c = customWrapException(ex);
+        if (c != null) {
+            return c;
+        }
+        return wrapDefaultException(ex);
+    }
+
+    protected NWebHttpException customWrapException(Throwable ex) {
         return null;
     }
 
@@ -260,6 +277,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
         }
         return this;
     }
+
 
     public NWebServerHttpContext sendResponseContent(byte[] bytes) {
         try {
@@ -507,28 +525,29 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
             return formData = new HashMap<>();
         }
         Map<String, FormDataItem> formData = new LinkedHashMap<>();
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(getRequestBody()))) {
-            String line = null;
-            line = br.readLine();
-            if (!line.trim().endsWith(multipartRequestBoundary.trim())) {
+        try (MixedInputStream br = new MixedInputStream(getRequestBody())) {
+            MixedInputStream.Line line = null;
+            line = br.readLine(maxLineLength);
+            if (!isBoundaryLine(line, multipartRequestBoundary)) {
                 throw new IllegalArgumentException("Invalid boundaries");
             }
             while (true) {
                 FormDataItem fd = null;
-                while ((line = br.readLine()) != null) {
-                    if (line.contains(":")) {
-                        int sep = line.indexOf(':');
-                        String k = line.substring(0, sep).trim();
-                        String v = line.substring(sep + 1).trim();
+                while ((line = br.readLine(maxLineLength)) != null) {
+                    String sLine = line.getContentString();
+                    if (sLine.contains(":")) {
+                        int sep = sLine.indexOf(':');
+                        String k = sLine.substring(0, sep).trim();
+                        String v = sLine.substring(sep + 1).trim();
                         if (fd == null) {
                             fd = new FormDataItem();
-                            formData.put(k, fd);
                         }
                         fd.getHeaders().computeIfAbsent(k, e -> new ArrayList<>()).add(v);
                         switch (k) {
                             case "Content-Disposition": {
                                 if (v.startsWith("form-data;")) {
-                                    Map<String, List<String>> parsed = nStringMapFormat.parseDuplicates(line.substring("form-data;".length()).trim()).get();
+                                    String cd = v.substring("form-data;".length()).trim();
+                                    Map<String, List<String>> parsed = nStringMapFormat.parseDuplicates(cd).get();
                                     fd.setName(_get("name", parsed));
                                     fd.setFilename(_get("filename", parsed));
                                     fd.setProperties(parsed);
@@ -540,39 +559,100 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
                                 break;
                             }
                         }
-                    } else if (line.trim().isEmpty()) {
+                    } else if (sLine.trim().isEmpty()) {
                         break;
                     } else {
-                        throw new NIOException(NMsg.ofC("Error reading request body : " + line));
+                        throw new NWebHttpException(
+                                NMsg.ofC("Error reading request body : %s", line).toString(),
+                                new NMsgCode("INVALID_FORM_DATA_BOUNDARY", sLine),
+                                NHttpCode.BAD_REQUEST
+                        );
                     }
                 }
                 if (fd != null && fd.getContentType() != null) {
-                    if ("text/plain".equals(fd.getContentType())) {
-                        NTempOutputStream outputStream = NIO.of().ofTempOutputStream();
-                        PrintStream out = new PrintStream(outputStream);
-                        br.read(new char[2048]);
-                        LineAndNewLine ll;
-                        while ((ll = readLineAndNewLine(br)) != null) {
-                            if (ll.line.trim().endsWith(multipartRequestBoundary.trim())) {
-                                break;
-                            } else {
-                                System.out.println(fd.getName() + " :: " + ll.line);
-                                out.print(ll.line);
-                                out.print(ll.newLine);
-                            }
-                        }
-                        // do not close
-                        fd.setSource(outputStream);
-                    }
+                    formData.put(fd.getName(), fd);
+
+                    String fdContentType = fd.getContentType();
+                    fd.setSource(readBinaryPart(br, multipartRequestBoundary));
                 } else if (fd != null) {
+                    formData.put(fd.getName(), fd);
+                    fd.setSource(readParamPart(br, multipartRequestBoundary));
+                } else if (line == null) {
+                    break;
+                } else if (NBlankable.isBlank(line)) {
                     //okkay
                 } else {
-                    throw new NIOException(NMsg.ofC("Error reading request body : " + line));
+                    throw new NWebHttpException(
+                            NMsg.ofC("Error reading request body").toString(),
+                            new NMsgCode("INVALID_FORM_DATA_BOUNDARY"),
+                            NHttpCode.BAD_REQUEST
+                    );
+                }
+            }
+        }
+        return this.formData = formData;
+    }
+
+    private NInputSource readBinaryPart(MixedInputStream br, String multipartRequestBoundary) {
+        NTempOutputStream outputStream = NIO.of().ofTempOutputStream();
+        try {
+            MixedInputStream.Line ll;
+            while ((ll = br.readLine(maxLineLength)) != null) {
+                if (isBoundaryLine(ll, multipartRequestBoundary)) {
+                    break;
+                } else {
+                    outputStream.write(ll.getContent());
+                    outputStream.write(ll.getSeparator());
                 }
             }
         } catch (IOException e) {
             throw new NIOException(e);
         }
+        // do not close
+        return outputStream;
+    }
+
+    private NInputSource readParamPart(MixedInputStream br, String multipartRequestBoundary) {
+        NInputSource src = readBinaryPart(br, multipartRequestBoundary);
+        byte[] allBytes = src.readBytes();
+        if (allBytes.length >= 2) {
+            if (
+                    allBytes[allBytes.length - 2] == 13
+                            && allBytes[allBytes.length - 1] == 10
+            ) {
+                return NInputSource.of(Arrays.copyOfRange(allBytes, 0, allBytes.length - 2));
+            }
+        } else if (allBytes.length >= 1) {
+            if (
+                    allBytes[allBytes.length - 1] == 13
+                            || allBytes[allBytes.length - 1] == 10
+            ) {
+                return NInputSource.of(Arrays.copyOfRange(allBytes, 0, allBytes.length - 1));
+            }
+        }
+        return src;
+    }
+
+    public boolean isBoundaryLine(MixedInputStream.Line bline, String boundary) {
+        for (byte b : bline.getContent()) {
+            if (b == '-' || b == ' ' || (b >= '0' && b <= '9') || (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z')) {
+                //ok
+            } else {
+                return false;
+            }
+        }
+        String line = bline.getContentString().trim();
+        boundary = boundary.trim();
+        if (line.length() > boundary.length()) {
+            int i = line.indexOf(boundary);
+            if (i >= 0) {
+                String r = line.substring(0, i)
+                        + "#"
+                        + line.substring(i + boundary.length());
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -727,6 +807,9 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
 
     @Override
     public NWebServerHttpContext sendResponse() {
+        if (responseHeadersSent) {
+            throw new NIllegalArgumentException(NMsg.ofC("response headers already sent"));
+        }
         switch (responseMode) {
             case "string": {
                 String json = String.valueOf(responseObject);
@@ -741,6 +824,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
                 } catch (IOException e) {
                     throw new NIOException(e);
                 }
+                responseHeadersSent = true;
                 this.sendResponseContent(bytes);
                 return this;
             }
@@ -757,7 +841,6 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
                         break;
                     }
                 }
-
                 this.setResponseContentType(NStringUtils.firstNonBlank(contentType, "text/plain"));
                 this.sendResponseHeaders();
                 try {
@@ -768,6 +851,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
                 } catch (IOException e) {
                     throw new NIOException(e);
                 }
+                responseHeadersSent = true;
                 this.sendResponseContent(bytes);
                 return this;
             }
@@ -794,6 +878,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
                 } catch (IOException e) {
                     throw new NIOException(e);
                 }
+                responseHeadersSent = true;
                 this.sendResponseContent(bytes);
                 return this;
             }
@@ -818,6 +903,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
                     } catch (IOException e) {
                         throw new NIOException(e);
                     }
+                    responseHeadersSent = true;
                     try (InputStream is = file.getInputStream()) {
                         this.sendResponseContent(is);
                     } catch (IOException ex) {
@@ -836,6 +922,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
                     this.setResponseCode(NHttpCode.NOT_FOUND);
                     this.setErrorCode(new NMsgCode("FILE_NOT_FOUND", file == null ? null : file.getName()));
                     this.sendResponseHeaders();
+                    responseHeadersSent = true;
                     this.sendResponseContent(new byte[0]);
                 }
                 return this;
@@ -855,24 +942,13 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
                 } catch (IOException e) {
                     throw new NIOException(e);
                 }
+                responseHeadersSent = true;
                 this.sendResponseContent(new byte[0]);
                 return this;
             }
             case "throwable": {
                 Throwable th = (Throwable) responseObject;
-                NWebHttpException r = null;
-                if (th != null && th instanceof NWebHttpException) {
-                    r = wrapException(th);
-                    if (r == null) {
-                        r = wrapDefaultException(th);
-                    }
-                } else {
-                    r = (NWebHttpException) responseObject;
-                }
-                if (r == null) {
-                    r = new NWebHttpException("error", new NMsgCode("ERROR", th.getMessage()), NHttpCode.BAD_REQUEST);
-                }
-
+                NWebHttpException r = wrapException(th);
                 String message = r.getMessage();
                 if (message == null) {
                     message = "Error";
@@ -908,6 +984,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
                 } catch (IOException e) {
                     throw new NIOException(e);
                 }
+                responseHeadersSent = true;
                 this.sendResponseContent(bytes);
                 return this;
             }
@@ -923,5 +1000,8 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
         }
     }
 
-
+    @Override
+    public boolean isResponseSent() {
+        return responseHeadersSent;
+    }
 }
