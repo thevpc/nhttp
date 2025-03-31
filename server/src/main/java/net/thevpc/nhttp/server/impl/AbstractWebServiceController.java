@@ -19,43 +19,42 @@ import java.util.logging.Level;
 public abstract class AbstractWebServiceController implements HttpHandler {
     public static final int OK = 200;
     protected NWebUserResolver userResolver;
-    protected NSession session;
     protected NWebLogger logger;
     protected String path;
     protected HttpServer server;
 
-    public AbstractWebServiceController(String path, NWebUserResolver userResolver, NSession session, NWebLogger logger) {
+    public AbstractWebServiceController(String path, NWebUserResolver userResolver, NWebLogger logger) {
         this.userResolver = userResolver;
-        this.session = session;
         this.logger = logger;
         this.path = path;
     }
 
     public void handle(HttpExchange t) {
-        NWebServerHttpContextImpl rc = new NWebServerHttpContextImpl(server, t, userResolver, session, logger);
-        rc.trace(Level.INFO, NMsg.ofPlain("incoming call"));
-        session.runWith(() -> {
-            try {
-                rc.runWithUnsafe(() -> handle(rc));
-            } catch (Throwable ex) {
-                if (isSimpleThrowable(ex)) {
-                    rc.trace(Level.SEVERE, NMsg.ofC("Failed call (%s)", ex));
-                } else {
-                    StringBuilder sb = new StringBuilder();
-                    try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-                        try (PrintStream pos = new PrintStream(bos)) {
-                            ex.printStackTrace(pos);
-                            pos.flush();
+        try(NWebServerHttpContextImpl rc = new NWebServerHttpContextImpl(server, t, userResolver, getLogger())) {
+            rc.trace(Level.INFO, NMsg.ofPlain("incoming call"));
+            NSession.of().runWith(() -> {
+                try {
+                    rc.runWithUnsafe(() -> handle(rc));
+                } catch (Throwable ex) {
+                    if (isSimpleThrowable(ex)) {
+                        rc.trace(Level.SEVERE, NMsg.ofC("Failed call (%s)", ex));
+                    } else {
+                        StringBuilder sb = new StringBuilder();
+                        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                            try (PrintStream pos = new PrintStream(bos)) {
+                                ex.printStackTrace(pos);
+                                pos.flush();
+                            }
+                            sb.append(bos.toString());
+                        } catch (IOException ex2) {
+                            //
                         }
-                        sb.append(bos.toString());
-                    } catch (IOException ex2) {
-                        //
+                        rc.trace(Level.SEVERE, NMsg.ofC("Failed call (%s) : %s", ex, sb.toString()));
                     }
-                    rc.trace(Level.SEVERE, NMsg.ofC("Failed call (%s) : %s", ex, sb.toString()));
+                    rc.setErrorResponse(ex).sendResponse();
                 }
-                rc.sendError(ex);
-            }
-        });
+            });
+        }
     }
 
     public boolean isSimpleThrowable(Throwable ex) {
@@ -74,6 +73,10 @@ public abstract class AbstractWebServiceController implements HttpHandler {
 
     public String getPath() {
         return path;
+    }
+
+    public NWebLogger getLogger() {
+        return logger;
     }
 
     public void bind(HttpServer server) {

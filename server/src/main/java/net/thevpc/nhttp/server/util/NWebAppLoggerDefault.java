@@ -1,22 +1,22 @@
 package net.thevpc.nhttp.server.util;
 
 import net.thevpc.nhttp.server.api.NWebLogger;
+import net.thevpc.nuts.NErr;
+import net.thevpc.nuts.NOut;
 import net.thevpc.nuts.util.NMsg;
-import net.thevpc.nuts.NSession;
 import net.thevpc.nuts.text.NTexts;
 
 import java.io.*;
 
 public class NWebAppLoggerDefault implements NWebLogger {
     private PrintStream out;
-    private NSession session;
     private NTexts txt;
     private File file;
     private File roll1;
     private long maxFileSize = 1024;
     private long fileSize;
 
-    public NWebAppLoggerDefault(File file, long maxFileSize,NSession session) {
+    public NWebAppLoggerDefault(File file, long maxFileSize) {
         try {
             this.file = file.getCanonicalFile();
         } catch (IOException e) {
@@ -24,7 +24,6 @@ public class NWebAppLoggerDefault implements NWebLogger {
         }
         this.maxFileSize=maxFileSize<=0?Long.MAX_VALUE:maxFileSize;
         this.roll1 = new File(this.file.getParent(), this.file.getName() + ".1");
-        this.session = session;
         this.txt = NTexts.of();
     }
 
@@ -53,13 +52,13 @@ public class NWebAppLoggerDefault implements NWebLogger {
 
     @Override
     public synchronized void out(NMsg msg) {
-        session.out().println(msg);
+        NOut.println(msg);
         _out(msg);
     }
 
     @Override
     public synchronized void err(NMsg msg) {
-        session.err().println(msg);
+        NErr.println(msg);
         _out(msg);
     }
 

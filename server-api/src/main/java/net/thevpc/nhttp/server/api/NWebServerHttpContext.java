@@ -1,16 +1,24 @@
 package net.thevpc.nhttp.server.api;
 
+import net.thevpc.nuts.format.NContentType;
+import net.thevpc.nuts.io.NPath;
+import net.thevpc.nuts.util.NMsgCode;
 import net.thevpc.nuts.web.NHttpCode;
 import net.thevpc.nuts.web.NHttpMethod;
 import net.thevpc.nuts.util.NMsg;
 import net.thevpc.nuts.util.NOptional;
-import net.thevpc.nuts.NSession;
 import net.thevpc.nuts.util.NUnsafeRunnable;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
-public interface NWebServerHttpContext {
+public interface NWebServerHttpContext extends AutoCloseable {
+
+    URI getRequestURI();
 
     String getFirstPath();
 
@@ -22,37 +30,27 @@ public interface NWebServerHttpContext {
 
     String getPathPart(int pos);
 
-    NSession getSession();
+    <T> T getRequestBodyAs(Class<T> cl);
 
-    <T> T getBodyAs(Class<T> cl);
+    <T> T getRequestBodyAs(Class<T> cl, NContentType contentType);
 
-    String getBodyAsString();
-
-    void sendPlainText(String ex, NHttpCode code, NWebResponseHeaders headers);
-
-    void sendXml(String value);
-
-    void sendXml(String value, NHttpCode code, NWebResponseHeaders headers);
-
-    void sendJson(Object ex, NWebResponseHeaders headers);
-
-    void sendJson(Object ex);
-
-    void sendJson(Object ex, NHttpCode code, NWebResponseHeaders headers);
+    String getRequestBodyAsString();
 
     String getPath();
 
-    void sendError(Throwable ex);
+    NWebServerHttpContext setResponseContentType(String contentType);
 
-    void sendError(NWebHttpException ex);
+    NWebServerHttpContext setErrorCode(NMsgCode errorCode);
 
-    void sendBytes(byte[] bytes, NHttpCode code, NWebResponseHeaders headers);
+    NWebServerHttpContext sendResponseHeaders();
+
+    OutputStream getResponseBody();
 
     NHttpMethod getMethod();
 
     NWebServerHttpContext requireAuth();
 
-    void trace(Level level, NMsg msg);
+    NWebServerHttpContext trace(Level level, NMsg msg);
 
     NWebServerHttpContext requireMethod(NHttpMethod... m);
 
@@ -70,9 +68,53 @@ public interface NWebServerHttpContext {
 
     NWebServerHttpContext runWithUnsafe(NUnsafeRunnable callable) throws Throwable;
 
-    Map<String, String> getQueryParams();
+    Map<String, List<String>> getQueryParams();
 
-    String getQueryParam(String queryParam);
+    NOptional<String> getQueryParam(String queryParam);
 
     boolean containsQueryParam(String queryParam);
+
+    NWebServerHttpContext addResponseHeader(String name, String value);
+
+    NWebServerHttpContext setResponseHeader(String name, String value);
+
+    NHttpCode getResponseCode();
+
+    NWebServerHttpContext setResponseCode(NHttpCode responseCode);
+
+    NOptional<String> getRequestHeader(String header);
+
+    Map<String, List<String>> getRequestHeaders();
+
+    List<String> getRequestHeaders(String header);
+
+    Map<String, FormDataItem> getFormaDataMap();
+
+    InputStream getRequestBody();
+
+    NOptional<FormDataItem> getFormaData(String name);
+
+    boolean isMultipartRequest();
+
+    NOptional<String> getMultipartRequestBoundary();
+
+    NWebServerHttpContext setTextResponse(String value);
+
+    NWebServerHttpContext setXmlResponse(String value);
+
+    NWebServerHttpContext setJsonResponse(Object value);
+
+    NWebServerHttpContext setBytesResponse(byte[] value);
+
+    NWebServerHttpContext setFileResponse(NPath value);
+
+    NWebServerHttpContext setErrorResponse(NMsgCode errorCode);
+
+    NWebServerHttpContext sendResponse();
+
+    NWebServerHttpContext setErrorResponse(NWebHttpException ex);
+
+    NWebServerHttpContext setErrorResponse(Throwable ex);
+
+    void close();
 }

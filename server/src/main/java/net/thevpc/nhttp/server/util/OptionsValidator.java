@@ -1,6 +1,9 @@
 package net.thevpc.nhttp.server.util;
 
 import net.thevpc.nhttp.server.api.NWebServerOptions;
+import net.thevpc.nuts.util.NStringUtils;
+
+import java.util.Objects;
 
 public class OptionsValidator {
 
@@ -13,36 +16,40 @@ public class OptionsValidator {
     }
 
     public static int validatePort(Integer port) {
-        int p=port==null?8080:port;
-        if(port<1024){
-            p=8080;
+        int p = port == null ? 8080 : port;
+        if (port < 1024) {
+            p = 8080;
         }
         return p;
     }
 
     public static NWebServerOptions validateOptions(NWebServerOptions options) {
-        if(options==null) {
+        if (options == null) {
             options = new NWebServerOptions();
-        }else{
+        } else {
             options = options.copy();
+        }
+        options.setHostName(NStringUtils.trim(options.getHostName()));
+        if (Objects.equals(options.getHostName(), "*")) {
+            options.setHostName(null);
         }
         int port = options.getPort() == null ? -1 : options.getPort();
         if (port <= 0) {
-            if (options.getSsl() == null || !options.getSsl()) {
-                options.setSsl(false);
+            if (options.getTls() == null || !options.getTls()) {
+                options.setTls(false);
                 port = 8080;
             } else {
                 port = 8443;
             }
         } else {
-            if (options.getSsl() == null) {
+            if (options.getTls() == null) {
                 if (port == 433
                         || (port >= 8400 && port <= 8499)
                         || (port >= 4000 && port <= 4999)
                 ) {
-                    options.setSsl(true);
+                    options.setTls(true);
                 } else {
-                    options.setSsl(false);
+                    options.setTls(false);
                 }
             }
         }

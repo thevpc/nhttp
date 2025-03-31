@@ -1,10 +1,11 @@
 package net.thevpc.nhttp.server.api;
 
 public class NWebServerOptions implements Cloneable{
+    private String hostName;
     private Integer port;
     private boolean reset;
     private boolean ignoreExistingPidFile;
-    private Boolean ssl;
+    private Boolean tls;
     private Integer backlog;
     private Integer minConnexions;
     private Integer maxConnexions;
@@ -14,6 +15,15 @@ public class NWebServerOptions implements Cloneable{
     private String logFile;
     private Long logFileMaxSize;
     private String contextPath;
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public NWebServerOptions setHostName(String hostName) {
+        this.hostName = hostName;
+        return this;
+    }
 
     public boolean isReset() {
         return reset;
@@ -55,12 +65,12 @@ public class NWebServerOptions implements Cloneable{
         return this;
     }
 
-    public Boolean getSsl() {
-        return ssl;
+    public Boolean getTls() {
+        return tls;
     }
 
-    public NWebServerOptions setSsl(Boolean ssl) {
-        this.ssl = ssl;
+    public NWebServerOptions setTls(Boolean tls) {
+        this.tls = tls;
         return this;
     }
 

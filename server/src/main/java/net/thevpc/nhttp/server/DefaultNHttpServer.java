@@ -15,6 +15,7 @@ import net.thevpc.nuts.io.NIOException;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.text.NTextStyle;
 import net.thevpc.nuts.log.NLog;
+import net.thevpc.nuts.util.NAssert;
 import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.util.NMsg;
 import net.thevpc.nuts.util.NStringUtils;
@@ -35,12 +36,10 @@ public class DefaultNHttpServer implements NHttpServer {
     private HttpServer server = null;
     private NWebServerOptions options;
     private NWebServerOptions effectiveOptions;
-    private NSession session;
     private NLog log;
     private ExecutorService executor;
     private File pidFile;
     private Long pid = null;
-    private NWebServerRunner runner;
     private NWebLogger logger;
     private File logFile;
     private long logFileMaxSize;
@@ -49,16 +48,74 @@ public class DefaultNHttpServer implements NHttpServer {
     private String defaultLogFile;
     private String defaultPidFile;
     private String serverName;
+    private Bootstrapper bootstrapper;
 
-    public DefaultNHttpServer(String serverName, NWebServerRunner runner, NWebServerOptions options, NSession session) {
-        this.serverName = serverName;
-        this.session = session;
-        this.options = options;
-        this.runner = runner;
+    private UserResolver userResolver;
+
+    private ContextResolver contextResolver;
+
+    private Configurator configurator;
+
+
+    public DefaultNHttpServer() {
         this.log = NLog.of(DefaultNHttpServer.class);
     }
 
-    public DefaultNHttpServer setLogger(NWebLogger logger) {
+    public NHttpServer setOptions(NWebServerOptions options) {
+        this.options = options;
+        return this;
+    }
+
+    public NHttpServer setServerName(String serverName) {
+        this.serverName = serverName;
+        return this;
+    }
+
+    @Override
+    public Bootstrapper getBootstrapper() {
+        return bootstrapper;
+    }
+
+    @Override
+    public NHttpServer setBootstrapper(Bootstrapper bootstrapper) {
+        this.bootstrapper = bootstrapper;
+        return this;
+    }
+
+    @Override
+    public UserResolver getUserResolver() {
+        return userResolver;
+    }
+
+    @Override
+    public NHttpServer setUserResolver(UserResolver userResolver) {
+        this.userResolver = userResolver;
+        return this;
+    }
+
+    @Override
+    public ContextResolver getContextResolver() {
+        return contextResolver;
+    }
+
+    @Override
+    public NHttpServer setContextResolver(ContextResolver contextResolver) {
+        this.contextResolver = contextResolver;
+        return this;
+    }
+
+    @Override
+    public Configurator getConfigurator() {
+        return configurator;
+    }
+
+    @Override
+    public NHttpServer setConfigurator(Configurator configurator) {
+        this.configurator = configurator;
+        return this;
+    }
+
+    public NHttpServer setLogger(NWebLogger logger) {
         this.logger = logger;
         return this;
     }
@@ -148,6 +205,7 @@ public class DefaultNHttpServer implements NHttpServer {
     }
 
     private void compile() {
+        String serverName = NStringUtils.firstNonBlank(this.serverName, "Server");
         if (this.effectiveOptions == null) {
             this.effectiveOptions = OptionsValidator.validateOptions(options);
             String logFile2 = effectiveOptions.getLogFile();
@@ -191,7 +249,9 @@ public class DefaultNHttpServer implements NHttpServer {
         }
     }
 
-    public void start() {
+    @Override
+    public NHttpServer start() {
+        NAssert.requireNonNull(contextResolver, "contextResolver");
         compile();
         prepareLogFile();
         preparePidFile();
@@ -202,25 +262,30 @@ public class DefaultNHttpServer implements NHttpServer {
                 .setMaxConnexions(effectiveOptions.getMaxConnexions())
                 .setMinConnexions(effectiveOptions.getMinConnexions())
                 .build();
-        runner.bootstrap(new NWebServerConfig(this));
+        if (bootstrapper != null) {
+            bootstrapper.bootstrap(new NWebServerConfig(this));
+        }
         showStartupBanner();
         prepareAfterBanner();
-        if (effectiveOptions.getSsl()) {
+        if (effectiveOptions.getTls()) {
             createHttpsServer();
         } else {
             createHttpServer();
         }
-        runner.createContext(new DefaultNWebContainer(options.getContextPath(), "NhttpServer"));
+        contextResolver.createContext(new DefaultNWebContainer(options.getContextPath(), "NhttpServer", server));
         server.setExecutor(executor); // creates a default executor
         server.start();
+        return this;
     }
 
     private void prepareAfterBanner() {
-        NWebUserResolver userResolver = runner.userResolver();
-        try {
-            new NWebServerHttpContextImpl(null, null, userResolver, session, logger)
+        NWebUserResolver userResolver = this.userResolver == null ? null : this.userResolver.userResolver();
+        try (NWebServerHttpContext c=new NWebServerHttpContextImpl(null, null, userResolver, logger)){
+            c
                     .runWithUnsafe(() -> {
-                        runner.initializeConfig();
+                        if (configurator != null) {
+                            configurator.initializeConfig();
+                        }
                     });
         } catch (Throwable e) {
             throw new RuntimeException(e);
@@ -229,12 +294,27 @@ public class DefaultNHttpServer implements NHttpServer {
 
     private void createHttpServer() {
         try {
-            server = HttpServer.create(new InetSocketAddress(effectiveOptions.getPort()), effectiveOptions.getBacklog());
+            InetSocketAddress addr =
+                    (NBlankable.isBlank(effectiveOptions.getHostName()) || "*".equals(NStringUtils.trim(effectiveOptions.getHostName())))
+                            ? new InetSocketAddress(effectiveOptions.getPort()) :
+                            new InetSocketAddress(effectiveOptions.getHostName(), effectiveOptions.getPort());
+            server = HttpServer.create(
+                    addr, effectiveOptions.getBacklog()
+            );
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    @Override
+    public void stop() {
+        server.stop(0);
+    }
+
+    @Override
+    public void stop(int delay) {
+        server.stop(delay);
+    }
 
     private void createHttpsServer() {
         genkeypair();
@@ -287,12 +367,10 @@ public class DefaultNHttpServer implements NHttpServer {
     }
 
     private void showStartupBanner() {
-        logger.out(NMsg.ofC("[%s] ##start## %s...",
-                NBlankable.isBlank(serverName) ? "server" :
-                        NStringUtils.trim(serverName)
-                , Instant.now()));
+        String serverName = NStringUtils.firstNonBlank(this.serverName, "Server");
+        logger.out(NMsg.ofC("[%s] %s %s...", serverName, NMsg.ofStyledSuccess("start"), Instant.now()));
         logger.out(NMsg.ofC("      port            %s", effectiveOptions.getPort()));
-        logger.out(NMsg.ofC("      SSL/TLS Mode    %s", effectiveOptions.getSsl()));
+        logger.out(NMsg.ofC("      SSL/TLS Mode    %s", effectiveOptions.getTls()));
         logger.out(NMsg.ofC("      connexions      %s-%s", effectiveOptions.getMinConnexions(), effectiveOptions.getMaxConnexions()));
         logger.out(NMsg.ofC("      idle time (sec) %s", effectiveOptions.getIdlTimeSeconds()));
         logger.out(NMsg.ofC("      queue size      %s", effectiveOptions.getQueueSize()));
@@ -309,7 +387,7 @@ public class DefaultNHttpServer implements NHttpServer {
 
     private void prepareLogFile() {
         if (logger == null) {
-            logger = new NWebAppLoggerDefault(logFile, logFileMaxSize, session);
+            logger = new NWebAppLoggerDefault(logFile, logFileMaxSize);
         }
         if (getHeader() != null) {
             logger.out(getHeader());
@@ -368,36 +446,38 @@ public class DefaultNHttpServer implements NHttpServer {
         return logger;
     }
 
-    public NSession getSession() {
-        return session;
-    }
-
     public HttpServer getServer() {
         return server;
     }
 
+    @Override
     public NMsg getHeader() {
         return header;
     }
 
-    public DefaultNHttpServer setHeader(NMsg header) {
+    @Override
+    public NHttpServer setHeader(NMsg header) {
         this.header = header;
         return this;
     }
 
+    @Override
     public String getDefaultLogFile() {
         return defaultLogFile;
     }
 
-    public DefaultNHttpServer setDefaultLogFile(String defaultLogFile) {
+    @Override
+    public NHttpServer setDefaultLogFile(String defaultLogFile) {
         this.defaultLogFile = defaultLogFile;
         return this;
     }
 
+    @Override
     public String getDefaultPidFile() {
         return defaultPidFile;
     }
 
+    @Override
     public DefaultNHttpServer setDefaultPidFile(String defaultPidFile) {
         this.defaultPidFile = defaultPidFile;
         return this;
