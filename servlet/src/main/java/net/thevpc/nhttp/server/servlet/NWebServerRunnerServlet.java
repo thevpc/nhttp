@@ -43,7 +43,7 @@ public class NWebServerRunnerServlet implements NWebServerRunner {
     }
 
     @Override
-    public void createContext(NWebContainer container) {
+    public void createContext(NWebContext container) {
         NHttpServer ws = appWebServer.getServer();
         ServletContextImpl rootContext = new ServletContextImpl(ws,
                 "/",
@@ -82,12 +82,12 @@ public class NWebServerRunnerServlet implements NWebServerRunner {
                 sb.append(url);
             }
             //System.out.println("BIND "+sb.toString()+" :: "+servlet.getServlet().getClass().getName());
-            ws.getServer().createContext(sb.toString(), new ServletHttpHandler(
-                    servlet,
-                    container,
-                    ws,
-                    config
-            ));
+//            ws.getServer().createContext(sb.toString(), new ServletHttpHandler(
+//                    servlet,
+//                    container,
+//                    ws,
+//                    config
+//            ));
             try {
                 servlet.getServlet().init(config);
             } catch (ServletException e) {

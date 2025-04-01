@@ -5,8 +5,7 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
 import net.thevpc.nhttp.server.api.*;
-import net.thevpc.nhttp.server.impl.NWebServerHttpContextImpl;
-import net.thevpc.nhttp.server.model.DefaultNWebContainer;
+import net.thevpc.nhttp.server.model.DefaultNWebContext;
 import net.thevpc.nhttp.server.util.ExecutorBuilder;
 import net.thevpc.nhttp.server.util.NWebAppLoggerDefault;
 import net.thevpc.nhttp.server.util.OptionsValidator;
@@ -15,7 +14,6 @@ import net.thevpc.nuts.io.NIOException;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.text.NTextStyle;
 import net.thevpc.nuts.log.NLog;
-import net.thevpc.nuts.util.NAssert;
 import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.util.NMsg;
 import net.thevpc.nuts.util.NStringUtils;
@@ -29,7 +27,9 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.security.KeyStore;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 public class DefaultNHttpServer implements NHttpServer {
@@ -50,11 +50,7 @@ public class DefaultNHttpServer implements NHttpServer {
     private String serverName;
     private Bootstrapper bootstrapper;
 
-    private UserResolver userResolver;
-
-    private ContextResolver contextResolver;
-
-    private Configurator configurator;
+    private Map<String, NWebContext> containers = new HashMap<>();
 
 
     public DefaultNHttpServer() {
@@ -82,44 +78,10 @@ public class DefaultNHttpServer implements NHttpServer {
         return this;
     }
 
-    @Override
-    public UserResolver getUserResolver() {
-        return userResolver;
-    }
-
-    @Override
-    public NHttpServer setUserResolver(UserResolver userResolver) {
-        this.userResolver = userResolver;
-        return this;
-    }
-
-    @Override
-    public ContextResolver getContextResolver() {
-        return contextResolver;
-    }
-
-    @Override
-    public NHttpServer setContextResolver(ContextResolver contextResolver) {
-        this.contextResolver = contextResolver;
-        return this;
-    }
-
-    @Override
-    public Configurator getConfigurator() {
-        return configurator;
-    }
-
-    @Override
-    public NHttpServer setConfigurator(Configurator configurator) {
-        this.configurator = configurator;
-        return this;
-    }
-
     public NHttpServer setLogger(NWebLogger logger) {
         this.logger = logger;
         return this;
     }
-
 
     private File normalizedFile(String str) {
         File file = new File(str);
@@ -251,7 +213,6 @@ public class DefaultNHttpServer implements NHttpServer {
 
     @Override
     public NHttpServer start() {
-        NAssert.requireNonNull(contextResolver, "contextResolver");
         compile();
         prepareLogFile();
         preparePidFile();
@@ -272,23 +233,36 @@ public class DefaultNHttpServer implements NHttpServer {
         } else {
             createHttpServer();
         }
-        contextResolver.createContext(new DefaultNWebContainer(options.getContextPath(), "NhttpServer", server));
+        String contextPath = NStringUtils.firstNonBlank(options.getContextPath(), "/");
+        if (!containers.containsKey(contextPath)) {
+            addContext(contextPath);
+        }
         server.setExecutor(executor); // creates a default executor
+        for (NWebContext value : containers.values()) {
+            value.start();
+        }
         server.start();
         return this;
     }
 
+    public NWebContext addContext(String contextPath) {
+        contextPath = NStringUtils.firstNonBlank(contextPath, "/");
+        DefaultNWebContext c = new DefaultNWebContext(contextPath, "NhttpServer", this);
+        containers.put(c.getContextPath(), c);
+        return c;
+    }
+
     private void prepareAfterBanner() {
-        NWebUserResolver userResolver = this.userResolver == null ? null : this.userResolver.userResolver();
-        try (NWebServerHttpContext c=new NWebServerHttpContextImpl(null, null, userResolver, logger)){
-            c
-                    .runWithUnsafe(() -> {
-                        if (configurator != null) {
-                            configurator.initializeConfig();
-                        }
-                    });
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
+        for (NWebContext container : containers.values()) {
+            try (NWebCallContext c = container.createContext(null)) {
+                c
+                        .runWithUnsafe(() -> {
+                                    c.initializeConfig();
+                                }
+                        );
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

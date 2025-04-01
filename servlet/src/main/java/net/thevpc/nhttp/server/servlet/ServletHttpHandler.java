@@ -2,7 +2,7 @@ package net.thevpc.nhttp.server.servlet;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import net.thevpc.nhttp.server.api.NWebContainer;
+import net.thevpc.nhttp.server.api.NWebContext;
 import net.thevpc.nhttp.server.api.NHttpServer;
 
 import javax.servlet.ServletContext;
@@ -12,13 +12,13 @@ import java.io.IOException;
 public class ServletHttpHandler implements HttpHandler {
     private NWebServletConfig servletConfig;
     private NHttpServer server;
-    private NWebContainer container;
+    private NWebContext container;
     private ServletConfigImpl myServletConfig;
     private ServletContext servletContext;
 
     public ServletHttpHandler(
             NWebServletConfig servletConfig,
-            NWebContainer container,
+            NWebContext container,
             NHttpServer server,
             ServletConfigImpl myServletConfig
     ) {
@@ -81,7 +81,7 @@ public class ServletHttpHandler implements HttpHandler {
         return server;
     }
 
-    public NWebContainer getContainer() {
+    public NWebContext getContainer() {
         return container;
     }
 

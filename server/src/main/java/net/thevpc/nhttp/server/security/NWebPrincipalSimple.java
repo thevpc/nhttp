@@ -27,7 +27,7 @@ public class NWebPrincipalSimple implements NWebPrincipal {
 
     @Override
     public String getId() {
-        return user.getId();
+        return user.getUserId();
     }
 
     @Override

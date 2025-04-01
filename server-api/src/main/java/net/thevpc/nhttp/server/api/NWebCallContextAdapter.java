@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
-public abstract class NWebServerHttpContextAdapter implements NWebServerHttpContext {
-    abstract protected NWebServerHttpContext base();
+public abstract class NWebCallContextAdapter implements NWebCallContext {
+    abstract protected NWebCallContext base();
 
     @Override
     public URI getRequestURI() {
@@ -75,22 +75,22 @@ public abstract class NWebServerHttpContextAdapter implements NWebServerHttpCont
     }
 
     @Override
-    public NWebServerHttpContext requireAuth() {
+    public NWebCallContext requireAuth() {
         return base().requireAuth();
     }
 
     @Override
-    public NWebServerHttpContext trace(Level level, NMsg msg) {
+    public NWebCallContext trace(Level level, NMsg msg) {
         return base().trace(level, msg);
     }
 
     @Override
-    public NWebServerHttpContext requireMethod(NHttpMethod... m) {
+    public NWebCallContext requireMethod(NHttpMethod... m) {
         return base().requireMethod(m);
     }
 
     @Override
-    public NWebServerHttpContext throwNoFound() {
+    public NWebCallContext throwNoFound() {
         return base().throwNoFound();
     }
 
@@ -105,7 +105,7 @@ public abstract class NWebServerHttpContextAdapter implements NWebServerHttpCont
     }
 
     @Override
-    public NWebServerHttpContext setUser(NWebUser user) {
+    public NWebCallContext setUser(NWebUser user) {
         return base().setUser(user);
     }
 
@@ -115,12 +115,12 @@ public abstract class NWebServerHttpContextAdapter implements NWebServerHttpCont
     }
 
     @Override
-    public NWebServerHttpContext setToken(NWebToken token) {
+    public NWebCallContext setToken(NWebToken token) {
         return base().setToken(token);
     }
 
     @Override
-    public NWebServerHttpContext runWithUnsafe(NUnsafeRunnable callable) throws Throwable {
+    public NWebCallContext runWithUnsafe(NUnsafeRunnable callable) throws Throwable {
         return base().runWithUnsafe(callable);
     }
 
@@ -185,27 +185,27 @@ public abstract class NWebServerHttpContextAdapter implements NWebServerHttpCont
     }
 
     @Override
-    public NWebServerHttpContext setResponseContentType(String contentType) {
+    public NWebCallContext setResponseContentType(String contentType) {
         return base().setResponseContentType(contentType);
     }
 
     @Override
-    public NWebServerHttpContext setErrorCode(NMsgCode errorCode) {
+    public NWebCallContext setErrorCode(NMsgCode errorCode) {
         return base().setErrorCode(errorCode);
     }
 
     @Override
-    public NWebServerHttpContext sendResponseHeaders() {
+    public NWebCallContext sendResponseHeaders() {
         return base().sendResponseHeaders();
     }
 
     @Override
-    public NWebServerHttpContext addResponseHeader(String name, String value) {
+    public NWebCallContext addResponseHeader(String name, String value) {
         return base().addResponseHeader(name, value);
     }
 
     @Override
-    public NWebServerHttpContext setResponseHeader(String name, String value) {
+    public NWebCallContext setResponseHeader(String name, String value) {
         return base().setResponseHeader(name, value);
     }
 
@@ -215,52 +215,52 @@ public abstract class NWebServerHttpContextAdapter implements NWebServerHttpCont
     }
 
     @Override
-    public NWebServerHttpContext setResponseCode(NHttpCode responseCode) {
+    public NWebCallContext setResponseCode(NHttpCode responseCode) {
         return base().setResponseCode(responseCode);
     }
 
     @Override
-    public NWebServerHttpContext setTextResponse(String value) {
+    public NWebCallContext setTextResponse(String value) {
         return base().setTextResponse(value);
     }
 
     @Override
-    public NWebServerHttpContext setXmlResponse(String value) {
+    public NWebCallContext setXmlResponse(String value) {
         return base().setXmlResponse(value);
     }
 
     @Override
-    public NWebServerHttpContext setJsonResponse(Object value) {
+    public NWebCallContext setJsonResponse(Object value) {
         return base().setJsonResponse(value);
     }
 
     @Override
-    public NWebServerHttpContext setBytesResponse(byte[] value) {
+    public NWebCallContext setBytesResponse(byte[] value) {
         return base().setBytesResponse(value);
     }
 
     @Override
-    public NWebServerHttpContext setFileResponse(NPath value) {
+    public NWebCallContext setFileResponse(NPath value) {
         return base().setFileResponse(value);
     }
 
     @Override
-    public NWebServerHttpContext setErrorResponse(NMsgCode errorCode) {
+    public NWebCallContext setErrorResponse(NMsgCode errorCode) {
         return base().setErrorResponse(errorCode);
     }
 
     @Override
-    public NWebServerHttpContext sendResponse() {
+    public NWebCallContext sendResponse() {
         return base().sendResponse();
     }
 
     @Override
-    public NWebServerHttpContext setErrorResponse(NWebHttpException ex) {
+    public NWebCallContext setErrorResponse(NWebHttpException ex) {
         return base().setErrorResponse(ex);
     }
 
     @Override
-    public NWebServerHttpContext setErrorResponse(Throwable ex) {
+    public NWebCallContext setErrorResponse(Throwable ex) {
         return base().setErrorResponse(ex);
     }
 
@@ -277,5 +277,41 @@ public abstract class NWebServerHttpContextAdapter implements NWebServerHttpCont
     @Override
     public boolean isResponseSent() {
         return base().isResponseSent();
+    }
+
+
+    @Override
+    public void initializeConfig() {
+        base().initializeConfig();
+    }
+
+    @Override
+    public NWebContext getWebContext() {
+        return base().getWebContext();
+    }
+
+    @Override
+    public NLoginResult authenticateWithCredentials(NAuthenticationRequest authenticationRequest) {
+        return base().authenticateWithCredentials(authenticationRequest);
+    }
+
+    @Override
+    public NLoginResult authenticateWithRefreshToken(String refreshToken) {
+        return base().authenticateWithRefreshToken(refreshToken);
+    }
+
+    @Override
+    public NWebUser authenticateWithAccessToken(String accessToken) {
+        return base().authenticateWithAccessToken(accessToken);
+    }
+
+    @Override
+    public NOptional<String> getApiKeyRequestHeader() {
+        return base().getApiKeyRequestHeader();
+    }
+
+    @Override
+    public NOptional<String> getRealmRequestHeader() {
+        return base().getRealmRequestHeader();
     }
 }

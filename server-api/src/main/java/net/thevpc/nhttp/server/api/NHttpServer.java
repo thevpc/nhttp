@@ -1,6 +1,5 @@
 package net.thevpc.nhttp.server.api;
 
-import com.sun.net.httpserver.HttpServer;
 import net.thevpc.nuts.util.NMsg;
 
 public interface NHttpServer {
@@ -22,8 +21,6 @@ public interface NHttpServer {
 
     NWebLogger getLogger();
 
-    HttpServer getServer();
-
     NHttpServer setOptions(NWebServerOptions options);
 
     NHttpServer setServerName(String serverName);
@@ -31,18 +28,6 @@ public interface NHttpServer {
     Bootstrapper getBootstrapper();
 
     NHttpServer setBootstrapper(Bootstrapper bootstrapper);
-
-    UserResolver getUserResolver();
-
-    NHttpServer setUserResolver(UserResolver userResolver);
-
-    ContextResolver getContextResolver();
-
-    NHttpServer setContextResolver(ContextResolver contextResolver);
-
-    Configurator getConfigurator();
-
-    NHttpServer setConfigurator(Configurator configurator);
 
     NHttpServer start();
 
@@ -52,20 +37,9 @@ public interface NHttpServer {
 
     void stop(int delay);
 
+    NWebContext addContext(String contextPath);
+
     interface Bootstrapper {
         void bootstrap(NWebConfig appWebServer);
     }
-
-    interface UserResolver {
-        NWebUserResolver userResolver();
-    }
-
-    interface ContextResolver {
-        void createContext(NWebContainer container);
-    }
-
-    interface Configurator {
-        void initializeConfig();
-    }
-
 }

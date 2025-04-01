@@ -1,6 +1,5 @@
 package net.thevpc.nhttp.server.security;
 
-import net.thevpc.nuts.NSession;
 import net.thevpc.nuts.util.*;
 
 import javax.crypto.Cipher;
@@ -40,7 +39,7 @@ public class NWebSecurityUtils {
         return hexString.toString();
     }
 
-    public static String encryptString(String strToEncrypt, String secret, NSession session) {
+    public static String encryptString(String strToEncrypt, String secret) {
         try {
             //strToEncrypt must be multiple of 16 (bug in jdk11)
             byte[] bytes = strToEncrypt.getBytes(StandardCharsets.UTF_8);
@@ -58,7 +57,7 @@ public class NWebSecurityUtils {
             }
             bytes = out.toByteArray();
 
-            KeyInfo k = createKeyInfo(secret, session);
+            KeyInfo k = createKeyInfo(secret);
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.ENCRYPT_MODE, k.secretKey);
             return Base64.getEncoder().encodeToString(cipher.doFinal(bytes));
@@ -67,10 +66,10 @@ public class NWebSecurityUtils {
         }
     }
 
-    public static String decryptString(String strToDecrypt, String secret, NSession session) {
+    public static String decryptString(String strToDecrypt, String secret) {
         NAssert.requireNonBlank(secret,"secret");
         try {
-            KeyInfo k = createKeyInfo(secret, session);
+            KeyInfo k = createKeyInfo(secret);
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, k.secretKey);
             byte[] bytes = cipher.doFinal(Base64.getDecoder().decode(strToDecrypt));
@@ -90,7 +89,7 @@ public class NWebSecurityUtils {
         }
     }
 
-    private static KeyInfo createKeyInfo(String password, NSession session) {
+    private static KeyInfo createKeyInfo(String password) {
         if (password == null || password.length() == 0) {
             password = "password";
         }

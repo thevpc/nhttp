@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
-public interface NWebServerHttpContext extends AutoCloseable {
+public interface NWebCallContext extends AutoCloseable {
 
     URI getRequestURI();
 
@@ -40,35 +40,35 @@ public interface NWebServerHttpContext extends AutoCloseable {
 
     NWebHttpException wrapException(Throwable ex);
 
-    NWebServerHttpContext setResponseContentType(String contentType);
+    NWebCallContext setResponseContentType(String contentType);
 
-    NWebServerHttpContext setErrorCode(NMsgCode errorCode);
+    NWebCallContext setErrorCode(NMsgCode errorCode);
 
-    NWebServerHttpContext sendResponseHeaders();
+    NWebCallContext sendResponseHeaders();
 
     OutputStream getResponseBody();
 
     NHttpMethod getMethod();
 
-    NWebServerHttpContext requireAuth();
+    NWebCallContext requireAuth();
 
-    NWebServerHttpContext trace(Level level, NMsg msg);
+    NWebCallContext trace(Level level, NMsg msg);
 
-    NWebServerHttpContext requireMethod(NHttpMethod... m);
+    NWebCallContext requireMethod(NHttpMethod... m);
 
-    NWebServerHttpContext throwNoFound();
+    NWebCallContext throwNoFound();
 
     NWebPrincipal getPrincipal();
 
     NOptional<NWebUser> getUser();
 
-    NWebServerHttpContext setUser(NWebUser user);
+    NWebCallContext setUser(NWebUser user);
 
     NOptional<NWebToken> getToken();
 
-    NWebServerHttpContext setToken(NWebToken token);
+    NWebCallContext setToken(NWebToken token);
 
-    NWebServerHttpContext runWithUnsafe(NUnsafeRunnable callable) throws Throwable;
+    NWebCallContext runWithUnsafe(NUnsafeRunnable callable) throws Throwable;
 
     Map<String, List<String>> getQueryParams();
 
@@ -76,13 +76,17 @@ public interface NWebServerHttpContext extends AutoCloseable {
 
     boolean containsQueryParam(String queryParam);
 
-    NWebServerHttpContext addResponseHeader(String name, String value);
+    NWebCallContext addResponseHeader(String name, String value);
 
-    NWebServerHttpContext setResponseHeader(String name, String value);
+    NWebCallContext setResponseHeader(String name, String value);
 
     NHttpCode getResponseCode();
 
-    NWebServerHttpContext setResponseCode(NHttpCode responseCode);
+    NWebCallContext setResponseCode(NHttpCode responseCode);
+
+    NOptional<String> getApiKeyRequestHeader();
+
+    NOptional<String> getRealmRequestHeader();
 
     NOptional<String> getRequestHeader(String header);
 
@@ -100,25 +104,35 @@ public interface NWebServerHttpContext extends AutoCloseable {
 
     NOptional<String> getMultipartRequestBoundary();
 
-    NWebServerHttpContext setTextResponse(String value);
+    NWebCallContext setTextResponse(String value);
 
-    NWebServerHttpContext setXmlResponse(String value);
+    NWebCallContext setXmlResponse(String value);
 
-    NWebServerHttpContext setJsonResponse(Object value);
+    NWebCallContext setJsonResponse(Object value);
 
-    NWebServerHttpContext setBytesResponse(byte[] value);
+    NWebCallContext setBytesResponse(byte[] value);
 
-    NWebServerHttpContext setFileResponse(NPath value);
+    NWebCallContext setFileResponse(NPath value);
 
-    NWebServerHttpContext setErrorResponse(NMsgCode errorCode);
+    NWebCallContext setErrorResponse(NMsgCode errorCode);
 
-    NWebServerHttpContext sendResponse();
+    NWebCallContext sendResponse();
 
-    NWebServerHttpContext setErrorResponse(NWebHttpException ex);
+    NWebCallContext setErrorResponse(NWebHttpException ex);
 
-    NWebServerHttpContext setErrorResponse(Throwable ex);
+    NWebCallContext setErrorResponse(Throwable ex);
 
     void close();
 
     boolean isResponseSent();
+
+    NLoginResult authenticateWithCredentials(NAuthenticationRequest authenticationRequest);
+
+    NLoginResult authenticateWithRefreshToken(String refreshToken);
+
+    NWebUser authenticateWithAccessToken(String accessToken);
+
+    void initializeConfig();
+
+    NWebContext getWebContext();
 }

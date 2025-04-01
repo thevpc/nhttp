@@ -1,6 +1,7 @@
 package net.thevpc.nhttp.server.impl;
 
 import com.sun.net.httpserver.Headers;
+import net.thevpc.nhttp.server.model.DefaultNWebContext;
 import net.thevpc.nuts.NIllegalArgumentException;
 import net.thevpc.nuts.format.NContentType;
 import net.thevpc.nuts.io.*;
@@ -18,7 +19,6 @@ import net.thevpc.nhttp.server.api.*;
 import net.thevpc.nhttp.server.error.*;
 import net.thevpc.nhttp.server.model.NWebErrorResult;
 import net.thevpc.nhttp.server.security.*;
-import net.thevpc.nhttp.server.api.NWebLogger;
 import net.thevpc.nhttp.server.util.JsonUtils;
 
 import java.io.*;
@@ -28,37 +28,31 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-public class NWebServerHttpContextImpl implements NWebServerHttpContext {
+public class NWebCallContextImpl implements NWebCallContext {
     private static NStringMapFormat nStringMapFormat = NStringMapFormat.of("=", ";", "\\", false);
 
-    private HttpServer server;
     private HttpExchange httpExchange;
     private byte[] requestBody = null;
     private NHttpMethod method;
     private NWebUser user;
     private NWebToken token;
-    private NWebUserResolver userResolver;
     private String[] pathParts;
     //    private ByteArrayOutputStream bos = new ByteArrayOutputStream();
     private Map<String, List<String>> queryParams;
-    private NWebLogger logger;
     private Map<String, FormDataItem> formData;
     private Map<String, List<String>> responseHeaders = new HashMap<>();
     private NHttpCode responseCode = NHttpCode.OK;
     private String responseMode = "bytes";
     private String contentType = null;
     private Object responseObject;
-    private NWebServerHttpContextImpl ctx;
+    private NWebCallContextImpl ctx;
     private boolean responseHeadersSent;
     int maxLineLength = 1024 * 1024;
+    private NWebContext webContext;
 
-    public NWebServerHttpContextImpl(HttpServer server, HttpExchange httpExchange,
-                                     NWebUserResolver userResolver,
-                                     NWebLogger logger) {
-        this.server = server;
-        this.userResolver = userResolver;
+    public NWebCallContextImpl(NWebContext webContext, HttpExchange httpExchange) {
+        this.webContext = webContext;
         this.httpExchange = httpExchange;
-        this.logger = logger;
         if (httpExchange != null) {
             this.pathParts = Arrays.stream(getPath().split("/")).filter(x -> x.length() > 0).toArray(String[]::new);
         } else {
@@ -67,7 +61,20 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public NWebServerHttpContext addResponseHeader(String name, String value) {
+    public void initializeConfig() {
+        NWebContext.Configurator c = ((DefaultNWebContext) webContext).getConfigurator();
+        if (c != null) {
+            c.initializeConfig();
+        }
+    }
+
+    @Override
+    public NWebContext getWebContext() {
+        return webContext;
+    }
+
+    @Override
+    public NWebCallContext addResponseHeader(String name, String value) {
         if (value != null) {
             List<String> strings = responseHeaders.computeIfAbsent(name, k -> new ArrayList<>());
             if (!strings.contains(value)) {
@@ -78,7 +85,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public NWebServerHttpContext setResponseHeader(String name, String value) {
+    public NWebCallContext setResponseHeader(String name, String value) {
         List<String> strings = responseHeaders.computeIfAbsent(name, k -> new ArrayList<>());
         strings.clear();
         if (value != null) {
@@ -93,7 +100,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public NWebServerHttpContext setResponseCode(NHttpCode responseCode) {
+    public NWebCallContext setResponseCode(NHttpCode responseCode) {
         this.responseCode = responseCode;
         return this;
     }
@@ -114,7 +121,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     public HttpServer getServer() {
-        return server;
+        return ((DefaultNWebContext) webContext).getServer();
     }
 
     @Override
@@ -247,12 +254,12 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public NWebServerHttpContext setResponseContentType(String contentType) {
+    public NWebCallContext setResponseContentType(String contentType) {
         return setResponseHeader("Content-Type", contentType);
     }
 
     @Override
-    public NWebServerHttpContext setErrorCode(NMsgCode errorCode) {
+    public NWebCallContext setErrorCode(NMsgCode errorCode) {
         if (errorCode != null) {
             String json = JsonUtils.toJson(errorCode);
             String b64 = Base64.getEncoder().encodeToString(json.getBytes());
@@ -264,7 +271,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public NWebServerHttpContext sendResponseHeaders() {
+    public NWebCallContext sendResponseHeaders() {
         for (Map.Entry<String, List<String>> e : responseHeaders.entrySet()) {
             String k = e.getKey();
             List<String> v = e.getValue();
@@ -279,7 +286,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
 
-    public NWebServerHttpContext sendResponseContent(byte[] bytes) {
+    public NWebCallContext sendResponseContent(byte[] bytes) {
         try {
             OutputStream os = httpExchange.getResponseBody();
             os.write(bytes);
@@ -290,7 +297,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
         return this;
     }
 
-    public NWebServerHttpContext sendResponseContent(InputStream stream) {
+    public NWebCallContext sendResponseContent(InputStream stream) {
         try {
             OutputStream os = httpExchange.getResponseBody();
             if (stream != null) {
@@ -333,7 +340,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public NWebServerHttpContext requireAuth() {
+    public NWebCallContext requireAuth() {
         List<String> authorization = httpExchange.getRequestHeaders().get("Authorization");
         NWebUser user = null;
         NWebToken token = null;
@@ -343,18 +350,14 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
                 for (String s : authorization) {
                     if (s != null) {
                         if (s.toLowerCase().startsWith("bearer")) {
-                            someToken = true;
                             String yy = s.substring("bearer".length()).trim();
-                            token = userResolver.parseToken(yy);
-                            if (token != null) {
-                                try {
-                                    user = userResolver.loadUser(token);
-                                } catch (Exception e) {
-                                    throw new NWebUnauthorizedSecurityException(new NMsgCode("Security.InvalidToken"), e.toString());
-                                }
-                                if (user != null) {
-                                    break;
-                                }
+                            try {
+                                user = authenticateWithAccessToken(yy);
+                            } catch (Exception e) {
+                                // just ignore...
+                            }
+                            if (user != null) {
+                                break;
                             }
                         }
                     }
@@ -375,17 +378,17 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
                 throw new NWebUnauthorizedSecurityException(new NMsgCode("Security.MissingToken"), "missing token");
             }
         }
-        trace(Level.INFO, NMsg.ofC("authenticated %s %s", user.getId(), user.getUserName()));
+        trace(Level.INFO, NMsg.ofC("authenticated %s %s", user.getUserId(), user.getUserName()));
         setUser(user);
         setToken(token);
         return this;
     }
 
     @Override
-    public NWebServerHttpContext trace(Level level, NMsg msg) {
+    public NWebCallContext trace(Level level, NMsg msg) {
         Runtime rt = Runtime.getRuntime();
         double m = ((rt.totalMemory() - rt.freeMemory()) * 100.0 / rt.maxMemory());
-        logger.out(NMsg.ofC(
+        webContext.getLogger().out(NMsg.ofC(
                 "[%s][M%.3f%%] %8s %s %6s %s %s",
                 Instant.now(),
                 m,
@@ -399,7 +402,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public NWebServerHttpContext requireMethod(NHttpMethod... m) {
+    public NWebCallContext requireMethod(NHttpMethod... m) {
         NHttpMethod c = getMethod();
         for (NHttpMethod httpMethod : m) {
             if (httpMethod == c) {
@@ -413,7 +416,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public NWebServerHttpContext throwNoFound() {
+    public NWebCallContext throwNoFound() {
         throw new NWebHttpException("Not Found : [" + getMethod() + "] " + getPath(), new NMsgCode("NotFound"), NHttpCode.NOT_FOUND);
     }
 
@@ -431,7 +434,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public NWebServerHttpContext setUser(NWebUser user) {
+    public NWebCallContext setUser(NWebUser user) {
         this.user = user;
         return this;
     }
@@ -442,14 +445,14 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public NWebServerHttpContext setToken(NWebToken token) {
+    public NWebCallContext setToken(NWebToken token) {
         this.token = token;
         return this;
     }
 
     @Override
-    public NWebServerHttpContext runWithUnsafe(NUnsafeRunnable callable) throws Throwable {
-        NWebServerHttpContext t = NWebServerHttpContextHolder.current.get();
+    public NWebCallContext runWithUnsafe(NUnsafeRunnable callable) throws Throwable {
+        NWebCallContext t = NWebServerHttpContextHolder.current.get();
         NWebServerHttpContextHolder.current.set(this);
         try {
             callable.run();
@@ -513,6 +516,16 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
             }
         }
         return NOptional.ofNamedEmpty(header);
+    }
+
+    @Override
+    public NOptional<String> getApiKeyRequestHeader() {
+        return getRequestHeader("X-API-KEY");
+    }
+
+    @Override
+    public NOptional<String> getRealmRequestHeader() {
+        return getRequestHeader("X-REALM");
     }
 
     @Override
@@ -744,7 +757,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
 
 
     @Override
-    public NWebServerHttpContext setTextResponse(String value) {
+    public NWebCallContext setTextResponse(String value) {
         this.responseObject = value;
         this.contentType = "text/plain";
         this.responseMode = "string";
@@ -752,7 +765,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public NWebServerHttpContext setXmlResponse(String value) {
+    public NWebCallContext setXmlResponse(String value) {
         this.responseObject = value;
         this.contentType = "application/xml";
         this.responseMode = "string";
@@ -760,29 +773,29 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public NWebServerHttpContext setErrorResponse(NWebHttpException ex) {
+    public NWebCallContext setErrorResponse(NWebHttpException ex) {
         this.responseObject = ex;
         this.responseMode = "throwable";
         return this;
     }
 
     @Override
-    public NWebServerHttpContext setErrorResponse(Throwable ex) {
+    public NWebCallContext setErrorResponse(Throwable ex) {
         this.responseObject = ex;
         this.responseMode = "throwable";
         return this;
     }
 
     @Override
-    public NWebServerHttpContext setJsonResponse(Object value) {
+    public NWebCallContext setJsonResponse(Object value) {
         this.responseObject = value;
-        this.contentType = "application/xml";
+        this.contentType = "application/json";
         this.responseMode = "object";
         return this;
     }
 
     @Override
-    public NWebServerHttpContext setBytesResponse(byte[] value) {
+    public NWebCallContext setBytesResponse(byte[] value) {
         this.responseObject = value;
         this.contentType = "application/octet-stream";
         this.responseMode = "bytes";
@@ -790,7 +803,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public NWebServerHttpContext setFileResponse(NPath value) {
+    public NWebCallContext setFileResponse(NPath value) {
         this.responseObject = value;
         this.contentType = "application/octet-stream";
         this.responseMode = "path";
@@ -798,7 +811,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public NWebServerHttpContext setErrorResponse(NMsgCode errorCode) {
+    public NWebCallContext setErrorResponse(NMsgCode errorCode) {
         this.responseObject = errorCode;
         this.contentType = "application/json";
         this.responseMode = "msgCode";
@@ -806,7 +819,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     }
 
     @Override
-    public NWebServerHttpContext sendResponse() {
+    public NWebCallContext sendResponse() {
         if (responseHeadersSent) {
             throw new NIllegalArgumentException(NMsg.ofC("response headers already sent"));
         }
@@ -888,7 +901,7 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
 
                 if (file != null && file.exists() && file.isRegularFile()) {
                     if (NBlankable.isBlank(ct)) {
-                        ct = file.getContentType();
+                        ct = file.contentType();
                         if (NBlankable.isBlank(ct)) {
                             ct = "application/octet-stream";
                         }
@@ -1003,5 +1016,75 @@ public class NWebServerHttpContextImpl implements NWebServerHttpContext {
     @Override
     public boolean isResponseSent() {
         return responseHeadersSent;
+    }
+
+    @Override
+    public NLoginResult authenticateWithCredentials(NAuthenticationRequest authenticationRequest) {
+        NWebUser u = getWebContext().getUserResolver().loadUserAndAuthenticate(authenticationRequest);
+        if (u != null) {
+            NWebTokenBuilder tb = getWebContext().getTokenBuilder();
+            NWebTokenRequest wr = new NWebTokenRequest()
+                    .setType(NWebTokenType.ACCESS)
+                    .setUser(u)
+                    .setRealm(authenticationRequest.getRealm())
+                    .setApiKey(authenticationRequest.getApiKey());
+
+            NWebToken aToken = tb.createToken(wr.copy().setType(NWebTokenType.ACCESS), this);
+            NWebToken rToken = tb.createToken(wr.copy().setType(NWebTokenType.REFRESH), this);
+            String accessToken = getWebContext().getTokenEncoder().encode(aToken, this);
+            String refreshToken = getWebContext().getTokenEncoder().encode(rToken, this);
+            NLoginResult rr = new NLoginResult();
+            rr.setUserId(u.getUserId());
+            rr.setUserName(u.getUserName());
+            rr.setAccessToken(accessToken);
+            rr.setRefreshToken(refreshToken);
+            rr.setAccessExpiryTime(aToken.getExpiryTime());
+            rr.setRefreshExpiryTime(rToken.getExpiryTime());
+            return rr;
+        }
+        return null;
+    }
+
+    public NWebUser authenticateWithAccessToken(String accessToken) {
+        NWebToken tt = getWebContext().getTokenEncoder().decode(accessToken, this);
+        if (tt != null) {
+            if (tt.getType() == NWebTokenType.ACCESS && new Date(tt.getExpiryTime()).compareTo(new Date()) >= 0) {
+                NWebUser u = getWebContext().getUserResolver().loadUser(tt.getUserId());
+                if (u != null) {
+                    return u;
+                }
+            }
+        }
+        return null;
+    }
+
+    public NLoginResult authenticateWithRefreshToken(String refreshToken) {
+        NWebToken tt = getWebContext().getTokenEncoder().decode(refreshToken, this);
+        if (tt != null) {
+            if (tt.getType() == NWebTokenType.REFRESH && new Date(tt.getExpiryTime()).compareTo(new Date()) <= 0) {
+                NWebUser u = getWebContext().getUserResolver().loadUser(tt.getUserId());
+                if (u != null) {
+                    NWebTokenRequest wr = new NWebTokenRequest()
+                            .setType(NWebTokenType.ACCESS)
+                            .setUser(u)
+                            .setRealm(tt.getRealm())
+                            .setApiKey(tt.getApiKey());
+                    NWebTokenBuilder tb = getWebContext().getTokenBuilder();
+                    NWebToken aToken = tb.createToken(wr.copy().setType(NWebTokenType.ACCESS), this);
+                    NWebToken rToken = tb.createToken(wr.copy().setType(NWebTokenType.REFRESH), this);
+                    String accessToken = getWebContext().getTokenEncoder().encode(aToken, this);
+                    refreshToken = getWebContext().getTokenEncoder().encode(rToken, this);
+                    NLoginResult rr = new NLoginResult();
+                    rr.setUserId(u.getUserId());
+                    rr.setUserName(u.getUserName());
+                    rr.setAccessToken(accessToken);
+                    rr.setRefreshToken(refreshToken);
+                    rr.setAccessExpiryTime(aToken.getExpiryTime());
+                    rr.setRefreshExpiryTime(rToken.getExpiryTime());
+                    return rr;
+                }
+            }
+        }
+        return null;
     }
 }
