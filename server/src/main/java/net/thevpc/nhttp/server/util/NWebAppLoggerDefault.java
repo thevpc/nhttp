@@ -15,8 +15,12 @@ public class NWebAppLoggerDefault implements NWebLogger {
     private File roll1;
     private long maxFileSize = 1024;
     private long fileSize;
+    private File baseFile;
+    private long baseMaxFileSize;
 
     public NWebAppLoggerDefault(File file, long maxFileSize) {
+        this.baseFile=file;
+        this.maxFileSize=maxFileSize;
         try {
             this.file = file.getCanonicalFile();
         } catch (IOException e) {
@@ -25,6 +29,14 @@ public class NWebAppLoggerDefault implements NWebLogger {
         this.maxFileSize=maxFileSize<=0?Long.MAX_VALUE:maxFileSize;
         this.roll1 = new File(this.file.getParent(), this.file.getName() + ".1");
         this.txt = NTexts.of();
+    }
+
+    public File getBaseFile() {
+        return baseFile;
+    }
+
+    public long getBaseMaxFileSize() {
+        return baseMaxFileSize;
     }
 
     private synchronized void open() {

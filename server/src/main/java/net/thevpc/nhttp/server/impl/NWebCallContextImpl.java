@@ -20,6 +20,7 @@ import net.thevpc.nhttp.server.error.*;
 import net.thevpc.nhttp.server.model.NWebErrorResult;
 import net.thevpc.nhttp.server.security.*;
 import net.thevpc.nhttp.server.util.JsonUtils;
+import sun.misc.IOUtils;
 
 import java.io.*;
 import java.net.URI;
@@ -29,7 +30,7 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class NWebCallContextImpl implements NWebCallContext {
-    private static NStringMapFormat nStringMapFormat = NStringMapFormat.of("=", ";", "\\", false);
+    private static NStringMapFormat nStringMapFormat = NStringMapFormat.of("=", ";", "", false,NStringMapFormat.URL_ENCODER,NStringMapFormat.URL_DECODER);
 
     private HttpExchange httpExchange;
     private byte[] requestBody = null;
@@ -290,8 +291,8 @@ public class NWebCallContextImpl implements NWebCallContext {
         try {
             OutputStream os = httpExchange.getResponseBody();
             os.write(bytes);
-            os.close();
-        } catch (IOException e) {
+            //os.close();
+        } catch (IOException|NIOException|UncheckedIOException e) {
             throw new NMsgCodeException(new NMsgCode("IO.SendFailed"), NMsg.ofC("send byte failed : %s", e.toString()), e);
         }
         return this;
@@ -303,8 +304,8 @@ public class NWebCallContextImpl implements NWebCallContext {
             if (stream != null) {
                 NIOUtils.copy(stream, os);
             }
-            os.close();
-        } catch (IOException e) {
+            //os.close();
+        } catch (NIOException|UncheckedIOException e) {
             throw new NMsgCodeException(new NMsgCode("IO.SendFailed"), NMsg.ofC("send byte failed : %s", e.toString()), e);
         }
         return this;
@@ -538,7 +539,13 @@ public class NWebCallContextImpl implements NWebCallContext {
             return formData = new HashMap<>();
         }
         Map<String, FormDataItem> formData = new LinkedHashMap<>();
-        try (MixedInputStream br = new MixedInputStream(getRequestBody())) {
+
+//        byte[] rbBytes = NIOUtils.readBytes(getRequestBody());
+//        InputStream rb = new ByteArrayInputStream(rbBytes);
+//
+        InputStream rb = getRequestBody();
+
+        try (MixedInputStream br = new MixedInputStream(rb)) {
             MixedInputStream.Line line = null;
             line = br.readLine(maxLineLength);
             if (!isBoundaryLine(line, multipartRequestBoundary)) {
@@ -656,7 +663,7 @@ public class NWebCallContextImpl implements NWebCallContext {
         }
         String line = bline.getContentString().trim();
         boundary = boundary.trim();
-        if (line.length() > boundary.length()) {
+        if (line.length() >= boundary.length()) {
             int i = line.indexOf(boundary);
             if (i >= 0) {
                 String r = line.substring(0, i)

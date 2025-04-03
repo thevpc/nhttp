@@ -14,7 +14,7 @@ public class ExecutorBuilder {
     private static Logger LOG = Logger.getLogger(ExecutorBuilder.class.getName());
     public static final int DEFAULT_MIN_CONNEXIONS = 1024;
     public static final int DEFAULT_MAX_CONNEXIONS = 6 * 1024;
-    public static final int DEFAULT_QUEUE_SIZE = 1;
+    public static final int DEFAULT_QUEUE_SIZE = 10;
     public static final int DEFAULT_IDLE_TIME = 10 * 60;
     private Integer minConnexions;
     private Integer maxConnexions;
@@ -90,7 +90,7 @@ public class ExecutorBuilder {
                     idlTimeSeconds, // idle timeout
                     TimeUnit.SECONDS,
                     new ArrayBlockingQueue<Runnable>(queueSize),
-                    new NamedThreadFactory("hal-" + name),
+                    new NamedThreadFactory("nhttp-" + name),
                     new RejectedExecutionHandler() {
                         @Override
                         public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {

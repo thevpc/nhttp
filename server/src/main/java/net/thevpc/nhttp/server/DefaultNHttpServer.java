@@ -30,6 +30,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.*;
 
 public class DefaultNHttpServer implements NHttpServer {
@@ -40,7 +41,6 @@ public class DefaultNHttpServer implements NHttpServer {
     private ExecutorService executor;
     private File pidFile;
     private Long pid = null;
-    private NWebLogger logger;
     private File logFile;
     private long logFileMaxSize;
     private String storeCredentials;
@@ -52,6 +52,46 @@ public class DefaultNHttpServer implements NHttpServer {
 
     private Map<String, NWebContext> containers = new HashMap<>();
 
+    private NWebLogger fileLogger;
+    private NWebLogger userLogger;
+    private boolean validLoggerFile = false;
+    private boolean validPidFile = false;
+
+    private NWebLogger safeLogger = new NWebLogger() {
+        boolean headerWritten = false;
+
+        private void writeHeader() {
+            if (!headerWritten) {
+                NMsg msg = getHeader();
+                if (userLogger != null) {
+                    userLogger.out(msg);
+                } else {
+                    fileLogger().out(msg);
+                }
+                headerWritten = true;
+            }
+        }
+
+        @Override
+        public void out(NMsg msg) {
+            writeHeader();
+            if (userLogger != null) {
+                userLogger.out(msg);
+                return;
+            }
+            fileLogger().out(msg);
+        }
+
+        @Override
+        public void err(NMsg msg) {
+            writeHeader();
+            if (userLogger != null) {
+                userLogger.err(msg);
+                return;
+            }
+            fileLogger().err(msg);
+        }
+    };
 
     public DefaultNHttpServer() {
         this.log = NLog.of(DefaultNHttpServer.class);
@@ -79,7 +119,7 @@ public class DefaultNHttpServer implements NHttpServer {
     }
 
     public NHttpServer setLogger(NWebLogger logger) {
-        this.logger = logger;
+        this.userLogger = logger;
         return this;
     }
 
@@ -166,54 +206,86 @@ public class DefaultNHttpServer implements NHttpServer {
         return NApp.of().getVarFolder().resolve("app-store.jks");
     }
 
-    private void compile() {
-        String serverName = NStringUtils.firstNonBlank(this.serverName, "Server");
-        if (this.effectiveOptions == null) {
-            this.effectiveOptions = OptionsValidator.validateOptions(options);
-            String logFile2 = effectiveOptions.getLogFile();
-            if (NBlankable.isBlank(logFile2)) {
-                logFile2 = getDefaultLogFile();
-            }
-            if (NBlankable.isBlank(logFile2)) {
-                logFile2 = serverName + ".log";
-            }
-            if (NBlankable.isBlank(logFile2)) {
-                logFile2 = "server.log";
-            }
-            this.logFile = normalizedFile(logFile2);
-            this.logFileMaxSize = effectiveOptions.getLogFileMaxSize() == null ? -1 : effectiveOptions.getLogFileMaxSize();
-            this.effectiveOptions.setLogFile(this.logFile.getAbsolutePath());
-            String pidFilePath = this.effectiveOptions.getPidFile();
-            if (NBlankable.isBlank(pidFilePath)) {
-                pidFilePath = getDefaultPidFile();
-            }
-            if (NBlankable.isBlank(pidFilePath)) {
-                pidFilePath = serverName + ".pid";
-            }
-            if (NBlankable.isBlank(pidFilePath)) {
-                pidFilePath = "server.pid";
-            }
-            String pname = null;
+    private NWebLogger fileLogger() {
+        if (validLoggerFile) {
+            return fileLogger;
+        }
+        NWebServerOptions _effectiveOptions = effectiveOptions();
+        String logFile2 = _effectiveOptions.getLogFile();
+        if (NBlankable.isBlank(logFile2)) {
+            logFile2 = getDefaultLogFile();
+        }
+        if (NBlankable.isBlank(logFile2)) {
+            logFile2 = serverName + ".log";
+        }
+        if (NBlankable.isBlank(logFile2)) {
+            logFile2 = "server.log";
+        }
+        this.logFile = normalizedFile(logFile2);
+        this.logFileMaxSize = _effectiveOptions.getLogFileMaxSize() == null ? -1 : _effectiveOptions.getLogFileMaxSize();
+        if (this.fileLogger != null) {
             try {
-                pname = ManagementFactory.getRuntimeMXBean().getName();
+                NWebAppLoggerDefault oldFileLogger = (NWebAppLoggerDefault) this.fileLogger;
+                if (!Objects.equals(oldFileLogger.getBaseFile(), logFile) || !Objects.equals(oldFileLogger.getBaseMaxFileSize(), logFileMaxSize)) {
+                    oldFileLogger.close();
+                    this.fileLogger = new NWebAppLoggerDefault(logFile, logFileMaxSize);
+                }
             } catch (Exception e) {
                 //
             }
-            if (pname != null && pname.matches("[0-9]+@.*")) {
-                pid = Long.parseLong(pname.substring(0, pname.indexOf('@')));
-            }
-            if (NBlankable.isBlank(pidFilePath)) {
-                pidFile = normalizedFile(getDefaultPidFile());
-            } else {
-                pidFile = normalizedFile(pidFilePath);
-            }
-            this.effectiveOptions.setPidFile(pidFile.getAbsolutePath());
+        } else {
+            this.fileLogger = new NWebAppLoggerDefault(logFile, logFileMaxSize);
         }
+        _effectiveOptions.setLogFile(this.logFile.getAbsolutePath());
+        validLoggerFile = true;
+        return this.fileLogger;
+    }
+
+    private NWebServerOptions effectiveOptions() {
+        if (this.effectiveOptions == null) {
+            this.effectiveOptions = OptionsValidator.validateOptions(options);
+        }
+        return this.effectiveOptions;
+    }
+
+    private File pidFile() {
+        if (validPidFile) {
+            return pidFile;
+        }
+        String pidFilePath = this.effectiveOptions.getPidFile();
+        if (NBlankable.isBlank(pidFilePath)) {
+            pidFilePath = getDefaultPidFile();
+        }
+        if (NBlankable.isBlank(pidFilePath)) {
+            pidFilePath = serverName + ".pid";
+        }
+        if (NBlankable.isBlank(pidFilePath)) {
+            pidFilePath = "server.pid";
+        }
+        String pname = null;
+        try {
+            pname = ManagementFactory.getRuntimeMXBean().getName();
+        } catch (Exception e) {
+            //
+        }
+        if (pname != null && pname.matches("[0-9]+@.*")) {
+            pid = Long.parseLong(pname.substring(0, pname.indexOf('@')));
+        }
+        if (NBlankable.isBlank(pidFilePath)) {
+            pidFile = normalizedFile(getDefaultPidFile());
+        } else {
+            pidFile = normalizedFile(pidFilePath);
+        }
+        this.effectiveOptions.setPidFile(pidFile.getAbsolutePath());
+        this.validLoggerFile = true;
+        return pidFile;
     }
 
     @Override
     public NHttpServer start() {
-        compile();
+        effectiveOptions();
+        fileLogger();
+        pidFile();
         prepareLogFile();
         preparePidFile();
         this.executor = new ExecutorBuilder()
@@ -330,7 +402,7 @@ public class DefaultNHttpServer implements NHttpServer {
                         params.setSSLParameters(sslParameters);
 
                     } catch (Exception ex) {
-                        logger.err(NMsg.ofPlain("Failed to create HTTPS port"));
+                        userLogger.err(NMsg.ofPlain("Failed to create HTTPS port"));
                     }
                 }
             });
@@ -342,29 +414,26 @@ public class DefaultNHttpServer implements NHttpServer {
 
     private void showStartupBanner() {
         String serverName = NStringUtils.firstNonBlank(this.serverName, "Server");
-        logger.out(NMsg.ofC("[%s] %s %s...", serverName, NMsg.ofStyledSuccess("start"), Instant.now()));
-        logger.out(NMsg.ofC("      port            %s", effectiveOptions.getPort()));
-        logger.out(NMsg.ofC("      SSL/TLS Mode    %s", effectiveOptions.getTls()));
-        logger.out(NMsg.ofC("      connexions      %s-%s", effectiveOptions.getMinConnexions(), effectiveOptions.getMaxConnexions()));
-        logger.out(NMsg.ofC("      idle time (sec) %s", effectiveOptions.getIdlTimeSeconds()));
-        logger.out(NMsg.ofC("      queue size      %s", effectiveOptions.getQueueSize()));
-        logger.out(NMsg.ofC("      java-version    %s", System.getProperty("java.version")));
-        logger.out(NMsg.ofC("      java-home       %s", System.getProperty("java.home")));
-        logger.out(NMsg.ofC("      user-name       %s", System.getProperty("user.name")));
-        logger.out(NMsg.ofC("      user-dir        %s", System.getProperty("user.dir")));
-        logger.out(NMsg.ofC("      log-file        %s", logFile));
+        getLogger().out(NMsg.ofC("[%s] %s %s...", serverName, NMsg.ofStyledSuccess("start"), Instant.now()));
+        getLogger().out(NMsg.ofC("      port            %s", effectiveOptions.getPort()));
+        getLogger().out(NMsg.ofC("      SSL/TLS Mode    %s", effectiveOptions.getTls()));
+        userLogger.out(NMsg.ofC("      connexions      %s-%s", effectiveOptions.getMinConnexions(), effectiveOptions.getMaxConnexions()));
+        userLogger.out(NMsg.ofC("      idle time (sec) %s", effectiveOptions.getIdlTimeSeconds()));
+        userLogger.out(NMsg.ofC("      queue size      %s", effectiveOptions.getQueueSize()));
+        userLogger.out(NMsg.ofC("      java-version    %s", System.getProperty("java.version")));
+        userLogger.out(NMsg.ofC("      java-home       %s", System.getProperty("java.home")));
+        userLogger.out(NMsg.ofC("      user-name       %s", System.getProperty("user.name")));
+        userLogger.out(NMsg.ofC("      user-dir        %s", System.getProperty("user.dir")));
+        userLogger.out(NMsg.ofC("      log-file        %s", logFile));
         if (pidFile != null) {
-            logger.out(NMsg.ofC("      pid             %s", pid));
-            logger.out(NMsg.ofC("      pid-file        %s", pidFile));
+            userLogger.out(NMsg.ofC("      pid             %s", pid));
+            userLogger.out(NMsg.ofC("      pid-file        %s", pidFile));
         }
     }
 
     private void prepareLogFile() {
-        if (logger == null) {
-            logger = new NWebAppLoggerDefault(logFile, logFileMaxSize);
-        }
-        if (getHeader() != null) {
-            logger.out(getHeader());
+        if (userLogger == null) {
+            userLogger = new NWebAppLoggerDefault(logFile, logFileMaxSize);
         }
     }
 
@@ -377,7 +446,7 @@ public class DefaultNHttpServer implements NHttpServer {
                         pidFile.getParentFile().mkdirs();
                     }
                     if (pidFile.exists()) {
-                        logger.out(NMsg.ofC("Un old pid file was %s. will be %s",
+                        userLogger.out(NMsg.ofC("Un old pid file was %s. will be %s",
                                         NMsg.ofStyled("found", NTextStyle.warn()),
                                         NMsg.ofStyled("overridden", NTextStyle.warn())
                                 )
@@ -391,11 +460,11 @@ public class DefaultNHttpServer implements NHttpServer {
             } else {
                 if (pidFile.exists()) {
                     if (pidFile != null) {
-                        logger.out(NMsg.ofC("      pid             %s", pid));
-                        logger.out(NMsg.ofC("      pid-file        %s", pidFile));
+                        userLogger.out(NMsg.ofC("      pid             %s", pid));
+                        userLogger.out(NMsg.ofC("      pid-file        %s", pidFile));
                     }
-                    logger.out(NMsg.ofC("Server is %s.", NMsg.ofStyled("ALREADY RUNNING", NTextStyle.warn())));
-                    logger.out(NMsg.ofStyled("ABORT! (you may want to delete pid file)", NTextStyle.fail()));
+                    userLogger.out(NMsg.ofC("Server is %s.", NMsg.ofStyled("ALREADY RUNNING", NTextStyle.warn())));
+                    userLogger.out(NMsg.ofStyled("ABORT! (you may want to delete pid file)", NTextStyle.fail()));
                     System.exit(1);
                 }
                 try {
@@ -412,12 +481,11 @@ public class DefaultNHttpServer implements NHttpServer {
     }
 
     public NWebServerOptions getOptions() {
-        compile();
-        return effectiveOptions.copy();
+        return effectiveOptions().copy();
     }
 
     public NWebLogger getLogger() {
-        return logger;
+        return safeLogger;
     }
 
     public HttpServer getServer() {
@@ -463,7 +531,6 @@ public class DefaultNHttpServer implements NHttpServer {
 
     @Override
     public int getServerPort() {
-        compile();
-        return effectiveOptions.getPort();
+        return effectiveOptions().getPort();
     }
 }
