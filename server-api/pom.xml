@@ -15,7 +15,6 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <github.global.server>github</github.global.server>
         <nuts.genericName>NHTTP Server</nuts.genericName>
-        <nuts.api>true</nuts.api>
         <nuts.categories>
             /Settings/Utils
         </nuts.categories>
