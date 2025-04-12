@@ -20,7 +20,6 @@ import net.thevpc.nhttp.server.error.*;
 import net.thevpc.nhttp.server.model.NWebErrorResult;
 import net.thevpc.nhttp.server.security.*;
 import net.thevpc.nhttp.server.util.JsonUtils;
-import sun.misc.IOUtils;
 
 import java.io.*;
 import java.net.URI;
@@ -30,7 +29,6 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class NWebCallContextImpl implements NWebCallContext {
-    private static NStringMapFormat nStringMapFormat = NStringMapFormat.of("=", ";", "", false,NStringMapFormat.URL_ENCODER,NStringMapFormat.URL_DECODER);
 
     private HttpExchange httpExchange;
     private byte[] requestBody = null;
@@ -567,7 +565,7 @@ public class NWebCallContextImpl implements NWebCallContext {
                             case "Content-Disposition": {
                                 if (v.startsWith("form-data;")) {
                                     String cd = v.substring("form-data;".length()).trim();
-                                    Map<String, List<String>> parsed = nStringMapFormat.parseDuplicates(cd).get();
+                                    Map<String, List<String>> parsed = NStringMapFormat.HTTP_HEADER_FORMAT.parseDuplicates(cd).get();
                                     fd.setName(_get("name", parsed));
                                     fd.setFilename(_get("filename", parsed));
                                     fd.setProperties(parsed);
