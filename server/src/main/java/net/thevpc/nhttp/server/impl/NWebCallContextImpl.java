@@ -906,7 +906,7 @@ public class NWebCallContextImpl implements NWebCallContext {
 
                 if (file != null && file.exists() && file.isRegularFile()) {
                     if (NBlankable.isBlank(ct)) {
-                        ct = file.contentType();
+                        ct = file.getContentType();
                         if (NBlankable.isBlank(ct)) {
                             ct = "application/octet-stream";
                         }
