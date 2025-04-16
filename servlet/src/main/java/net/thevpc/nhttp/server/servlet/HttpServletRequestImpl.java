@@ -50,7 +50,7 @@ class HttpServletRequestImpl implements HttpServletRequest {
         if (li.isLong()) {
             return li.asLong().get();
         }
-        String ss = li.asString().orNull();
+        String ss = li.asStringValue().orNull();
         if (NBlankable.isBlank(ss)) {
             return 0;
         }

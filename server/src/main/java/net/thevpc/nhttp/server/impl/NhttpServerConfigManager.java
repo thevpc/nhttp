@@ -153,23 +153,23 @@ public class NhttpServerConfigManager implements NBlankable {
                 .children()
         ) {
             if (o.isName()) {
-                names.add(o.asString().get());
+                names.add(o.asStringValue().get());
             } else if (o.isString()) {
-                strings.add(o.asString().get());
+                strings.add(o.asStringValue().get());
             } else if (o.isOrdinalNumber()) {
-                numbers.add(o.asNumber().get());
+                numbers.add(o.asNumberValue().get());
             } else if (o.isNamedPair()) {
                 switch (o.asNamed().get().name()) {
                     case "userId": {
-                        wu.setUserId(o.asPair().get().value().asString().get());
+                        wu.setUserId(o.asPair().get().value().asStringValue().get());
                         break;
                     }
                     case "userName": {
-                        wu.setUserName(o.asPair().get().value().asString().get());
+                        wu.setUserName(o.asPair().get().value().asStringValue().get());
                         break;
                     }
                     case "password": {
-                        wu.setPassword(o.asPair().get().value().asString().get());
+                        wu.setPassword(o.asPair().get().value().asStringValue().get());
                         break;
                     }
                 }
