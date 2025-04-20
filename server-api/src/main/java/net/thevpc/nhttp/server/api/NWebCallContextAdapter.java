@@ -160,8 +160,8 @@ public abstract class NWebCallContextAdapter implements NWebCallContext {
     }
 
     @Override
-    public Map<String, FormDataItem> getFormaDataMap() {
-        return base().getFormaDataMap();
+    public Map<String, FormDataItem> getFormDataMap() {
+        return base().getFormDataMap();
     }
 
     @Override
@@ -170,8 +170,8 @@ public abstract class NWebCallContextAdapter implements NWebCallContext {
     }
 
     @Override
-    public NOptional<FormDataItem> getFormaData(String name) {
-        return base().getFormaData(name);
+    public NOptional<FormDataItem> getFormData(String name) {
+        return base().getFormData(name);
     }
 
     @Override

@@ -528,7 +528,7 @@ public class NWebCallContextImpl implements NWebCallContext {
     }
 
     @Override
-    public Map<String, FormDataItem> getFormaDataMap() {
+    public Map<String, FormDataItem> getFormDataMap() {
         if (formData != null) {
             return formData;
         }
@@ -679,8 +679,8 @@ public class NWebCallContextImpl implements NWebCallContext {
     }
 
     @Override
-    public NOptional<FormDataItem> getFormaData(String name) {
-        Map<String, FormDataItem> u = getFormaDataMap();
+    public NOptional<FormDataItem> getFormData(String name) {
+        Map<String, FormDataItem> u = getFormDataMap();
         return NOptional.ofNamed(u == null ? null : u.get(name), name);
     }
 

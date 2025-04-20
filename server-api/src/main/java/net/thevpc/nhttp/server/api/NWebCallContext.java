@@ -94,11 +94,11 @@ public interface NWebCallContext extends AutoCloseable {
 
     List<String> getRequestHeaders(String header);
 
-    Map<String, FormDataItem> getFormaDataMap();
+    Map<String, FormDataItem> getFormDataMap();
 
     InputStream getRequestBody();
 
-    NOptional<FormDataItem> getFormaData(String name);
+    NOptional<FormDataItem> getFormData(String name);
 
     boolean isMultipartRequest();
 
