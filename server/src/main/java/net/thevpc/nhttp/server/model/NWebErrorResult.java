@@ -1,6 +1,7 @@
 package net.thevpc.nhttp.server.model;
 
 import net.thevpc.nuts.NDTO;
+import net.thevpc.nuts.util.NMsgCode;
 
 public class NWebErrorResult implements NDTO {
     private boolean error;
@@ -9,6 +10,13 @@ public class NWebErrorResult implements NDTO {
     private String[] params;
 
     public NWebErrorResult() {
+    }
+
+    public NWebErrorResult(NMsgCode message) {
+        this.error = true;
+        this.message = message.toString();
+        this.code = message.getCode();
+        this.params = message.getParams();
     }
 
     public NWebErrorResult(String message) {

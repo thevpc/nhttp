@@ -40,7 +40,7 @@ public class NWebSecurityContext {
     public static NWebSecurityContext currentRequired() {
         NWebSecurityContext t = current.get();
         if (t == null) {
-            throw new NWebUnauthorizedSecurityException(new NMsgCode("Security.Unauthorized"), "missing security context");
+            throw new NWebUnauthorizedSecurityException(NMsgCode.ofCode("Security.Unauthorized"), "missing security context");
         }
         return t;
     }

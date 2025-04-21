@@ -195,7 +195,7 @@ public class NWebCallContextImpl implements NWebCallContext {
 
     public NWebHttpException wrapException(Throwable ex) {
         if (ex == null) {
-            return new NWebHttpException("error", new NMsgCode("ERROR"), NHttpCode.BAD_REQUEST);
+            return new NWebHttpException(NMsg.ofC("error"), NMsgCode.ofCode("error", "ERROR"), NHttpCode.BAD_REQUEST);
         }
         if (ex instanceof NWebHttpException) {
             return (NWebHttpException) ex;
@@ -215,39 +215,39 @@ public class NWebCallContextImpl implements NWebCallContext {
         if (ex instanceof NWebHttpException) {
             return ((NWebHttpException) ex);
         } else if (ex instanceof NoSuchElementException) {
-            return (new NWebHttpException(ex.getMessage(),
-                    NMsgCodeAware.codeOf(ex).orElse(new NMsgCode("NotFound", ex.getMessage())), NHttpCode.NOT_FOUND));
+            return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()),
+                    NMsgCodeAware.codeOf(ex).orElse(NMsgCode.ofCode("NotFound", ex.getMessage())), NHttpCode.NOT_FOUND));
         } else if (ex instanceof NWebUnauthorizedSecurityException) {
-            return (new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.UNAUTHORIZED));
+            return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()), NMsgCodeAware.codeOf(ex).get(), NHttpCode.UNAUTHORIZED));
         } else if (ex instanceof SecurityException) {
-            return (new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
+            return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
         } else if (ex instanceof NMsgCodeException) {
-            return (new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
+            return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
         } else if (ex instanceof NMsgCodeAware) {
-            return (new NWebHttpException(ex.getMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.BAD_REQUEST));
+            return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()), NMsgCodeAware.codeOf(ex).get(), NHttpCode.BAD_REQUEST));
         } else if (ex instanceof NErrorOptionalException) {
-            return (new NWebHttpException(ex.getMessage(),
-                    new NMsgCode("Error", ex.getMessage())
+            return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()),
+                    NMsgCode.ofCode("Error", ex.getMessage())
                     , NHttpCode.BAD_REQUEST));
         } else if (ex instanceof NDetachedErrorOptionalException) {
-            return (new NWebHttpException(ex.getMessage(),
-                    new NMsgCode("Error", ex.getMessage())
+            return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()),
+                    NMsgCode.ofCode("Error", ex.getMessage())
                     , NHttpCode.BAD_REQUEST));
         } else if (ex instanceof NDetachedEmptyOptionalException) {
-            return (new NWebHttpException(ex.getMessage(),
-                    new NMsgCode("Not Found", ex.getMessage())
+            return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()),
+                    NMsgCode.ofCode("Not Found")
                     , NHttpCode.NOT_FOUND));
         } else if (ex instanceof NEmptyOptionalException) {
-            return (new NWebHttpException(ex.getMessage(),
-                    new NMsgCode("Not Found", ex.getMessage())
+            return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()),
+                    NMsgCode.ofCode("Not Found")
                     , NHttpCode.NOT_FOUND));
         } else {
             NOptional<NMsgCode> codeOf = NMsgCodeAware.codeOf(ex);
             if (codeOf.isPresent()) {
-                return (new NWebHttpException(ex.getMessage(), codeOf.get(), NHttpCode.BAD_REQUEST));
+                return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()), codeOf.get(), NHttpCode.BAD_REQUEST));
             } else {
                 //ex.printStackTrace();
-                return (new NWebHttpException(ex.getMessage(), new NMsgCode("Error"), NHttpCode.INTERNAL_SERVER_ERROR));
+                return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()), NMsgCode.ofCode("Error"), NHttpCode.INTERNAL_SERVER_ERROR));
             }
         }
     }
@@ -290,8 +290,8 @@ public class NWebCallContextImpl implements NWebCallContext {
             OutputStream os = httpExchange.getResponseBody();
             os.write(bytes);
             //os.close();
-        } catch (IOException|NIOException|UncheckedIOException e) {
-            throw new NMsgCodeException(new NMsgCode("IO.SendFailed"), NMsg.ofC("send byte failed : %s", e.toString()), e);
+        } catch (IOException | NIOException | UncheckedIOException e) {
+            throw new NMsgCodeException(NMsg.ofC("send byte failed : %s", e.toString()), NMsgCode.ofCode("IO.SendFailed"), e);
         }
         return this;
     }
@@ -303,8 +303,8 @@ public class NWebCallContextImpl implements NWebCallContext {
                 NIOUtils.copy(stream, os);
             }
             //os.close();
-        } catch (NIOException|UncheckedIOException e) {
-            throw new NMsgCodeException(new NMsgCode("IO.SendFailed"), NMsg.ofC("send byte failed : %s", e.toString()), e);
+        } catch (NIOException | UncheckedIOException e) {
+            throw new NMsgCodeException(NMsg.ofC("send byte failed : %s", e.toString()), NMsgCode.ofCode("IO.SendFailed"), e);
         }
         return this;
     }
@@ -365,16 +365,16 @@ public class NWebCallContextImpl implements NWebCallContext {
                 if (ex instanceof NMsgCodeAware) {
                     throw ex;
                 }
-                throw new NMsgCodeException(new NMsgCode("Security.AuthorizationFailed"), NMsg.ofPlain(ex.toString()), ex);
+                throw new NMsgCodeException(NMsg.ofPlain(ex.toString()), NMsgCode.ofCode("Security.AuthorizationFailed"), ex);
             } catch (Throwable ex) {
-                throw new NMsgCodeException(new NMsgCode("Security.AuthorizationFailed"), NMsg.ofPlain(ex.toString()), ex);
+                throw new NMsgCodeException(NMsg.ofPlain(ex.toString()), NMsgCode.ofCode("Security.AuthorizationFailed"), ex);
             }
         }
         if (user == null) {
             if (someToken) {
-                throw new NWebUnauthorizedSecurityException(new NMsgCode("Security.InvalidToken"), "invalid token");
+                throw new NWebUnauthorizedSecurityException(NMsgCode.ofCode("Security.InvalidToken"), "invalid token");
             } else {
-                throw new NWebUnauthorizedSecurityException(new NMsgCode("Security.MissingToken"), "missing token");
+                throw new NWebUnauthorizedSecurityException(NMsgCode.ofCode("Security.MissingToken"), "missing token");
             }
         }
         trace(Level.INFO, NMsg.ofC("authenticated %s %s", user.getUserId(), user.getUserName()));
@@ -411,12 +411,12 @@ public class NWebCallContextImpl implements NWebCallContext {
         String requiredStr = " (required "
                 + (m.length == 1 ? String.valueOf(m[0]) : Arrays.stream(m).map(Enum::name).collect(Collectors.joining(","))) + ")";
         throw new NWebHttpException(
-                "Not Allowed : [" + getMethod() + " ] " + requiredStr + " " + getPath(), new NMsgCode("HttpMethodNotAllowed", String.valueOf(c)), NHttpCode.METHOD_NOT_ALLOWED);
+                NMsg.ofC("Not Allowed : [%s ] %s %s", getMethod(), requiredStr, getPath()), NMsgCode.ofCode("HttpMethodNotAllowed", String.valueOf(c)), NHttpCode.METHOD_NOT_ALLOWED);
     }
 
     @Override
     public NWebCallContext throwNoFound() {
-        throw new NWebHttpException("Not Found : [" + getMethod() + "] " + getPath(), new NMsgCode("NotFound"), NHttpCode.NOT_FOUND);
+        throw new NWebHttpException(NMsg.ofC("Not Found : [%s] %s", getMethod(), getPath()), NMsgCode.ofCode("NotFound"), NHttpCode.NOT_FOUND);
     }
 
     @Override
@@ -581,8 +581,8 @@ public class NWebCallContextImpl implements NWebCallContext {
                         break;
                     } else {
                         throw new NWebHttpException(
-                                NMsg.ofC("Error reading request body : %s", line).toString(),
-                                new NMsgCode("INVALID_FORM_DATA_BOUNDARY", sLine),
+                                NMsg.ofC("Error reading request body : %s", line),
+                                NMsgCode.ofCode("INVALID_FORM_DATA_BOUNDARY", sLine),
                                 NHttpCode.BAD_REQUEST
                         );
                     }
@@ -601,8 +601,8 @@ public class NWebCallContextImpl implements NWebCallContext {
                     //okkay
                 } else {
                     throw new NWebHttpException(
-                            NMsg.ofC("Error reading request body").toString(),
-                            new NMsgCode("INVALID_FORM_DATA_BOUNDARY"),
+                            NMsg.ofC("Error reading request body"),
+                            NMsgCode.ofCode("INVALID_FORM_DATA_BOUNDARY"),
                             NHttpCode.BAD_REQUEST
                     );
                 }
@@ -938,7 +938,7 @@ public class NWebCallContextImpl implements NWebCallContext {
                     }
 
                     this.setResponseCode(NHttpCode.NOT_FOUND);
-                    this.setErrorCode(new NMsgCode("FILE_NOT_FOUND", file == null ? null : file.getName()));
+                    this.setErrorCode(NMsgCode.ofCode("FILE_NOT_FOUND", file == null ? null : file.getName()));
                     this.sendResponseHeaders();
                     responseHeadersSent = true;
                     this.sendResponseContent(new byte[0]);
@@ -948,7 +948,7 @@ public class NWebCallContextImpl implements NWebCallContext {
             case "msgCode": {
                 NMsgCode mc = (NMsgCode) responseObject;
                 if (mc == null) {
-                    mc = new NMsgCode("ERROR");
+                    mc = NMsgCode.ofCode("ERROR");
                 }
                 this.setErrorCode(mc);
                 this.sendResponseHeaders();
@@ -967,28 +967,18 @@ public class NWebCallContextImpl implements NWebCallContext {
             case "throwable": {
                 Throwable th = (Throwable) responseObject;
                 NWebHttpException r = wrapException(th);
-                String message = r.getMessage();
-                if (message == null) {
-                    message = "Error";
-                }
-                NMsgCode mcode = r.getNMsgCode();
-                NWebErrorResult o = new NWebErrorResult(message);
-                if (mcode != null) {
-                    o.setCode(mcode.getCode());
-                    o.setParams(mcode.getParams());
-                }
-                setErrorCode(mcode);
+                setErrorCode(r.getMsgCode());
                 byte[] bytes = null;
                 String errCt = NStringUtils.firstNonBlank(contentType, "application/json");
                 switch (errCt) {
                     case "application/json": {
-                        bytes = JsonUtils.toJson(o).getBytes();
+                        bytes = JsonUtils.toJson(new NWebErrorResult(r.getMsgCode())).getBytes();
                         break;
                     }
                     default: {
                         //force
                         errCt = "application/json";
-                        bytes = JsonUtils.toJson(o).getBytes();
+                        bytes = JsonUtils.toJson(new NWebErrorResult(r.getMsgCode())).getBytes();
                         break;
                     }
                 }

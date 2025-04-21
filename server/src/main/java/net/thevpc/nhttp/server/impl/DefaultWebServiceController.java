@@ -70,7 +70,7 @@ public class DefaultWebServiceController implements HttpHandler {
             h.handle(rc);
         } else {
             rc.setErrorResponse(new NWebHttpException(
-                    "unsupported path " + rc.getPath(), new NMsgCode("NOT_FOUND", rc.getPath()), NHttpCode.NOT_FOUND
+                    NMsg.ofC("unsupported path %s", rc.getPath()), NMsgCode.ofCode("NOT_FOUND", rc.getPath()), NHttpCode.NOT_FOUND
             ));
         }
     }
