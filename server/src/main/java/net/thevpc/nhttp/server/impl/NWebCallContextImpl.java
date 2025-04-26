@@ -10,6 +10,7 @@ import net.thevpc.nuts.reserved.optional.NDetachedErrorOptionalException;
 import net.thevpc.nuts.reserved.optional.NEmptyOptionalException;
 import net.thevpc.nuts.reserved.optional.NErrorOptionalException;
 import net.thevpc.nuts.text.NTextStyle;
+import net.thevpc.nuts.time.NChronometer;
 import net.thevpc.nuts.util.*;
 import net.thevpc.nuts.web.NHttpCode;
 import net.thevpc.nuts.web.NHttpMethod;
@@ -25,6 +26,7 @@ import java.io.*;
 import java.net.URI;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -48,6 +50,7 @@ public class NWebCallContextImpl implements NWebCallContext {
     private boolean responseHeadersSent;
     int maxLineLength = 1024 * 1024;
     private NWebContext webContext;
+    private Consumer<NHttpLogMsg> tracer;
 
     public NWebCallContextImpl(NWebContext webContext, HttpExchange httpExchange) {
         this.webContext = webContext;
@@ -340,6 +343,7 @@ public class NWebCallContextImpl implements NWebCallContext {
 
     @Override
     public NWebCallContext requireAuth() {
+        NChronometer nChronometer = NChronometer.startNow();
         List<String> authorization = httpExchange.getRequestHeaders().get("Authorization");
         NWebUser user = null;
         NWebToken token = null;
@@ -377,26 +381,51 @@ public class NWebCallContextImpl implements NWebCallContext {
                 throw new NWebUnauthorizedSecurityException(NMsgCode.ofCode("Security.MissingToken"), "missing token");
             }
         }
-        trace(Level.INFO, NMsg.ofC("authenticated %s %s", user.getUserId(), user.getUserName()));
+        if (Objects.equals(user.getUserId(), user.getUserName())) {
+            trace(new NHttpLogMsg().setDuration(nChronometer.getDuration()).setLevel(Level.INFO).setMessage(NMsg.ofC("authenticated %s", user.getUserId())));
+        } else {
+            trace(new NHttpLogMsg().setDuration(nChronometer.getDuration()).setLevel(Level.INFO).setMessage(NMsg.ofC("authenticated %s (%s)", user.getUserId(), user.getUserName())));
+        }
         setUser(user);
         setToken(token);
         return this;
     }
 
     @Override
-    public NWebCallContext trace(Level level, NMsg msg) {
-        Runtime rt = Runtime.getRuntime();
-        double m = ((rt.totalMemory() - rt.freeMemory()) * 100.0 / rt.maxMemory());
-        webContext.getLogger().out(NMsg.ofC(
-                "[%s][M%.3f%%] %8s %s %6s %s %s",
-                Instant.now(),
-                m,
-                level,
-                httpExchange.getRemoteAddress(),
-                NMsg.ofStyled(httpExchange.getRequestMethod(), NTextStyle.primary1()),
-                NMsg.ofStyled(httpExchange.getRequestURI().toString(), NTextStyle.path()),
-                msg
-        ));
+    public NWebCallContext info(NMsg msg) {
+        NHttpLogMsg z = new NHttpLogMsg();
+        z.setMessage(msg);
+        z.setLevel(Level.INFO);
+        trace(z);
+        return this;
+    }
+
+    @Override
+    public NWebCallContext error(NMsg msg) {
+        NHttpLogMsg z = new NHttpLogMsg();
+        z.setMessage(msg);
+        z.setLevel(Level.SEVERE);
+        trace(z);
+        return this;
+    }
+
+    @Override
+    public NWebCallContext trace(NHttpLogMsg d) {
+        if (d.getSource() == null) {
+            d.setSource(String.valueOf(httpExchange.getRemoteAddress()));
+        }
+        if (d.getMethod() == null) {
+            d.setMethod(httpExchange.getRequestMethod());
+        }
+        if (d.getUrl() == null) {
+            d.setUrl(httpExchange.getRequestURI().toString());
+        }
+        d.validate();
+        if (tracer != null) {
+            tracer.accept(d);
+        } else {
+            webContext.getLogger().log(d);
+        }
         return this;
     }
 
@@ -1081,5 +1110,14 @@ public class NWebCallContextImpl implements NWebCallContext {
             }
         }
         return null;
+    }
+
+    public Consumer<NHttpLogMsg> getTracer() {
+        return tracer;
+    }
+
+    public NWebCallContextImpl setTracer(Consumer<NHttpLogMsg> tracer) {
+        this.tracer = tracer;
+        return this;
     }
 }

@@ -39,7 +39,7 @@ public class NhttpServerConfigManager implements NBlankable {
     }
 
     public void tryReload() {
-        Instant otherInstant = configFile.lastAccessInstant();
+        Instant otherInstant = configFile.lastModifiedInstant();
         if (lastLoaded == null || otherInstant == null || lastLoaded.isBefore(otherInstant)) {
             reload();
         }
@@ -61,7 +61,7 @@ public class NhttpServerConfigManager implements NBlankable {
     }
 
     public void save() {
-        logger.out(NMsg.ofC("saving config to %s", configFile.toAbsolute().toString()));
+        logger.info(NMsg.ofC("saving config to %s", configFile.toAbsolute().toString()));
         List<NWebUser> usersCopy;
         synchronized (users) {
             usersCopy = new ArrayList<>(this.users.values());
@@ -97,7 +97,7 @@ public class NhttpServerConfigManager implements NBlankable {
     public void reload() {
         synchronized (users) {
             if (configFile.isRegularFile()) {
-                logger.out(NMsg.ofC("reloading config from %s", configFile.toAbsolute().toString()));
+                logger.info(NMsg.ofC("reloading config from %s", configFile.toAbsolute().toString()));
                 users.clear();
                 NElement object = NElements.of().tson().parse(configFile);
                 if (object != null) {
@@ -112,7 +112,7 @@ public class NhttpServerConfigManager implements NBlankable {
                 lastLoaded = configFile.lastModifiedInstant();
             } else {
                 lastLoaded=null;
-                logger.out(NMsg.ofC("resetting config (file not found %s)", configFile.toAbsolute().toString()));
+                logger.info(NMsg.ofC("resetting config (config file not found %s)", configFile.toAbsolute().toString()));
             }
         }
     }

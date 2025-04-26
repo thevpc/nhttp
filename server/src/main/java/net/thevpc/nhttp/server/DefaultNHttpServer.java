@@ -22,16 +22,14 @@ import javax.net.ssl.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.net.InetSocketAddress;
+import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.security.KeyStore;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.*;
+import java.util.logging.Level;
 
 public class DefaultNHttpServer implements NHttpServer {
     private HttpServer server = null;
@@ -64,33 +62,33 @@ public class DefaultNHttpServer implements NHttpServer {
             if (!headerWritten) {
                 NMsg msg = getHeader();
                 if (userLogger != null) {
-                    userLogger.out(msg);
+                    userLogger.info(msg);
                 } else {
-                    fileLogger().out(msg);
+                    fileLogger().info(msg);
                 }
                 headerWritten = true;
             }
         }
 
         @Override
-        public void out(NMsg msg) {
-            writeHeader();
-            if (userLogger != null) {
-                userLogger.out(msg);
-                return;
+        public void log(NHttpLogMsg msg) {
+            if (msg.getLevel().intValue() >= Level.SEVERE.intValue()) {
+                writeHeader();
+                if (userLogger != null) {
+                    userLogger.log(msg);
+                    return;
+                }
+                fileLogger().err(msg.buildMessage());
+            } else {
+                writeHeader();
+                if (userLogger != null) {
+                    userLogger.log(msg);
+                    return;
+                }
+                fileLogger().info(msg.buildMessage());
             }
-            fileLogger().out(msg);
         }
 
-        @Override
-        public void err(NMsg msg) {
-            writeHeader();
-            if (userLogger != null) {
-                userLogger.err(msg);
-                return;
-            }
-            fileLogger().err(msg);
-        }
     };
 
     public DefaultNHttpServer() {
@@ -412,22 +410,55 @@ public class DefaultNHttpServer implements NHttpServer {
         }
     }
 
+    public static List<InetAddress> getLocalIPAddresses() {
+        List<InetAddress> localIPs = new ArrayList<>();
+
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface iface = interfaces.nextElement();
+
+                try {
+                    // Skip loopback and inactive interfaces
+                    if (!iface.isUp() || iface.isLoopback() || iface.isVirtual()) continue;
+                } catch (Exception ex) {
+                    //just ignore
+                }
+
+                Enumeration<InetAddress> addresses = iface.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    InetAddress addr = addresses.nextElement();
+
+                    // Filter out loopback and link-local addresses
+                    if (!(addr instanceof Inet4Address || addr instanceof Inet6Address)) continue;
+                    if (addr.isLoopbackAddress() || addr.isLinkLocalAddress()) continue;
+
+                    localIPs.add(addr);
+                }
+            }
+        } catch (Exception ex) {
+            //just ignore
+        }
+        return localIPs;
+    }
+
     private void showStartupBanner() {
         String serverName = NStringUtils.firstNonBlank(this.serverName, "Server");
-        getLogger().out(NMsg.ofC("[%s] %s %s...", serverName, NMsg.ofStyledSuccess("start"), Instant.now()));
-        getLogger().out(NMsg.ofC("      port            %s", effectiveOptions.getPort()));
-        getLogger().out(NMsg.ofC("      SSL/TLS Mode    %s", effectiveOptions.getTls()));
-        userLogger.out(NMsg.ofC("      connexions      %s-%s", effectiveOptions.getMinConnexions(), effectiveOptions.getMaxConnexions()));
-        userLogger.out(NMsg.ofC("      idle time (sec) %s", effectiveOptions.getIdlTimeSeconds()));
-        userLogger.out(NMsg.ofC("      queue size      %s", effectiveOptions.getQueueSize()));
-        userLogger.out(NMsg.ofC("      java-version    %s", System.getProperty("java.version")));
-        userLogger.out(NMsg.ofC("      java-home       %s", System.getProperty("java.home")));
-        userLogger.out(NMsg.ofC("      user-name       %s", System.getProperty("user.name")));
-        userLogger.out(NMsg.ofC("      user-dir        %s", System.getProperty("user.dir")));
-        userLogger.out(NMsg.ofC("      log-file        %s", logFile));
+        getLogger().info(NMsg.ofC("[%s] %s %s...", serverName, NMsg.ofStyledSuccess("start"), Instant.now()));
+        getLogger().info(NMsg.ofC("      addresses       %s", getLocalIPAddresses()));
+        getLogger().info(NMsg.ofC("      port            %s", effectiveOptions.getPort()));
+        getLogger().info(NMsg.ofC("      SSL/TLS Mode    %s", effectiveOptions.getTls()));
+        userLogger.info(NMsg.ofC("      connexions      %s-%s", effectiveOptions.getMinConnexions(), effectiveOptions.getMaxConnexions()));
+        userLogger.info(NMsg.ofC("      idle time (sec) %s", effectiveOptions.getIdlTimeSeconds()));
+        userLogger.info(NMsg.ofC("      queue size      %s", effectiveOptions.getQueueSize()));
+        userLogger.info(NMsg.ofC("      java-version    %s", System.getProperty("java.version")));
+        userLogger.info(NMsg.ofC("      java-home       %s", System.getProperty("java.home")));
+        userLogger.info(NMsg.ofC("      user-name       %s", System.getProperty("user.name")));
+        userLogger.info(NMsg.ofC("      user-dir        %s", System.getProperty("user.dir")));
+        userLogger.info(NMsg.ofC("      log-file        %s", logFile));
         if (pidFile != null) {
-            userLogger.out(NMsg.ofC("      pid             %s", pid));
-            userLogger.out(NMsg.ofC("      pid-file        %s", pidFile));
+            userLogger.info(NMsg.ofC("      pid             %s", pid));
+            userLogger.info(NMsg.ofC("      pid-file        %s", pidFile));
         }
     }
 
@@ -446,7 +477,7 @@ public class DefaultNHttpServer implements NHttpServer {
                         pidFile.getParentFile().mkdirs();
                     }
                     if (pidFile.exists()) {
-                        userLogger.out(NMsg.ofC("Un old pid file was %s. will be %s",
+                        userLogger.info(NMsg.ofC("Un old pid file was %s. will be %s",
                                         NMsg.ofStyled("found", NTextStyle.warn()),
                                         NMsg.ofStyled("overridden", NTextStyle.warn())
                                 )
@@ -460,11 +491,11 @@ public class DefaultNHttpServer implements NHttpServer {
             } else {
                 if (pidFile.exists()) {
                     if (pidFile != null) {
-                        userLogger.out(NMsg.ofC("      pid             %s", pid));
-                        userLogger.out(NMsg.ofC("      pid-file        %s", pidFile));
+                        userLogger.info(NMsg.ofC("      pid             %s", pid));
+                        userLogger.info(NMsg.ofC("      pid-file        %s", pidFile));
                     }
-                    userLogger.out(NMsg.ofC("Server is %s.", NMsg.ofStyled("ALREADY RUNNING", NTextStyle.warn())));
-                    userLogger.out(NMsg.ofStyled("ABORT! (you may want to delete pid file)", NTextStyle.fail()));
+                    userLogger.info(NMsg.ofC("Server is %s.", NMsg.ofStyled("ALREADY RUNNING", NTextStyle.warn())));
+                    userLogger.info(NMsg.ofStyled("ABORT! (you may want to delete pid file)", NTextStyle.fail()));
                     System.exit(1);
                 }
                 try {

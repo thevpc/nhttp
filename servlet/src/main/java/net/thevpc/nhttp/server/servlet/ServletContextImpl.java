@@ -102,17 +102,17 @@ class ServletContextImpl implements ServletContext {
 
     @Override
     public void log(String msg) {
-        server.getLogger().out(NMsg.ofPlain(msg));
+        server.getLogger().info(NMsg.ofPlain(msg));
     }
 
     @Override
     public void log(Exception exception, String msg) {
-        server.getLogger().out(NMsg.ofC("%s : %s", msg, exception));
+        server.getLogger().info(NMsg.ofC("%s : %s", msg, exception));
     }
 
     @Override
     public void log(String message, Throwable throwable) {
-        server.getLogger().out(NMsg.ofC("%s : %s", message, throwable));
+        server.getLogger().info(NMsg.ofC("%s : %s", message, throwable));
     }
 
     @Override

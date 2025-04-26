@@ -80,8 +80,18 @@ public abstract class NWebCallContextAdapter implements NWebCallContext {
     }
 
     @Override
-    public NWebCallContext trace(Level level, NMsg msg) {
-        return base().trace(level, msg);
+    public NWebCallContext error(NMsg msg) {
+        return base().error(msg);
+    }
+
+    @Override
+    public NWebCallContext trace(NHttpLogMsg msg) {
+        return base().trace(msg);
+    }
+
+    @Override
+    public NWebCallContext info(NMsg msg) {
+        return base().info(msg);
     }
 
     @Override

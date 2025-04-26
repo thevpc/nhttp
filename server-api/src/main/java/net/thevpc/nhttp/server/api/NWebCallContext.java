@@ -52,7 +52,11 @@ public interface NWebCallContext extends AutoCloseable {
 
     NWebCallContext requireAuth();
 
-    NWebCallContext trace(Level level, NMsg msg);
+    NWebCallContext info(NMsg msg);
+
+    NWebCallContext error(NMsg msg);
+
+    NWebCallContext trace(NHttpLogMsg msg);
 
     NWebCallContext requireMethod(NHttpMethod... m);
 

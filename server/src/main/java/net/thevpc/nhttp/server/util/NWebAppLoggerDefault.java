@@ -1,5 +1,6 @@
 package net.thevpc.nhttp.server.util;
 
+import net.thevpc.nhttp.server.api.NHttpLogMsg;
 import net.thevpc.nhttp.server.api.NWebLogger;
 import net.thevpc.nuts.NErr;
 import net.thevpc.nuts.NOut;
@@ -7,6 +8,7 @@ import net.thevpc.nuts.util.NMsg;
 import net.thevpc.nuts.text.NTexts;
 
 import java.io.*;
+import java.util.logging.Level;
 
 public class NWebAppLoggerDefault implements NWebLogger {
     private PrintStream out;
@@ -19,14 +21,14 @@ public class NWebAppLoggerDefault implements NWebLogger {
     private long baseMaxFileSize;
 
     public NWebAppLoggerDefault(File file, long maxFileSize) {
-        this.baseFile=file;
-        this.maxFileSize=maxFileSize;
+        this.baseFile = file;
+        this.maxFileSize = maxFileSize;
         try {
             this.file = file.getCanonicalFile();
         } catch (IOException e) {
             this.file = file.getAbsoluteFile();
         }
-        this.maxFileSize=maxFileSize<=0?Long.MAX_VALUE:maxFileSize;
+        this.maxFileSize = maxFileSize <= 0 ? Long.MAX_VALUE : maxFileSize;
         this.roll1 = new File(this.file.getParent(), this.file.getName() + ".1");
         this.txt = NTexts.of();
     }
@@ -63,15 +65,15 @@ public class NWebAppLoggerDefault implements NWebLogger {
     }
 
     @Override
-    public synchronized void out(NMsg msg) {
-        NOut.println(msg);
-        _out(msg);
-    }
-
-    @Override
-    public synchronized void err(NMsg msg) {
-        NErr.println(msg);
-        _out(msg);
+    public void log(NHttpLogMsg msg) {
+        NMsg m = msg.buildMessage();
+        if (msg.getLevel().intValue() >= Level.SEVERE.intValue()) {
+            NErr.println(m);
+            _out(m);
+        } else {
+            NOut.println(m);
+            _out(m);
+        }
     }
 
     private void _out(NMsg msg) {
@@ -125,7 +127,7 @@ public class NWebAppLoggerDefault implements NWebLogger {
             } catch (Exception e) {
                 //
             }
-            out=null;
+            out = null;
         }
     }
 }

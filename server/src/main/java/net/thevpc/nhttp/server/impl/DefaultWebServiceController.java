@@ -5,15 +5,18 @@ import com.sun.net.httpserver.HttpHandler;
 import net.thevpc.nhttp.server.api.*;
 import net.thevpc.nhttp.server.error.NWebUnauthorizedSecurityException;
 import net.thevpc.nhttp.server.model.DefaultNWebContext;
+import net.thevpc.nuts.time.NChronometer;
+import net.thevpc.nuts.time.NDuration;
 import net.thevpc.nuts.util.NMsg;
 import net.thevpc.nuts.NSession;
 import net.thevpc.nuts.util.NMsgCode;
 import net.thevpc.nuts.util.NMsgCodeException;
+import net.thevpc.nuts.util.NStringUtils;
 import net.thevpc.nuts.web.NHttpCode;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 
 public class DefaultWebServiceController implements HttpHandler {
@@ -25,27 +28,48 @@ public class DefaultWebServiceController implements HttpHandler {
 
     public void handle(HttpExchange t) {
         try (NWebCallContextImpl rc = new NWebCallContextImpl(webContainer, t)) {
-            rc.trace(Level.INFO, NMsg.ofPlain("incoming call"));
+            NChronometer ch = NChronometer.startNow();
             NSession.of().runWith(() -> {
+                Throwable error = null;
+                String prefix = "   ";
+                List<NHttpLogMsg> seen = new ArrayList<>();
+                rc.setTracer(new Consumer<NHttpLogMsg>() {
+                    @Override
+                    public void accept(NHttpLogMsg nMsg) {
+                        seen.add(nMsg);
+                    }
+                });
                 try {
                     rc.runWithUnsafe(() -> handle(rc));
                 } catch (Throwable ex) {
-                    if (isSimpleThrowable(ex)) {
-                        rc.trace(Level.SEVERE, NMsg.ofC("Failed call (%s)", ex));
-                    } else {
-                        StringBuilder sb = new StringBuilder();
-                        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-                            try (PrintStream pos = new PrintStream(bos)) {
-                                ex.printStackTrace(pos);
-                                pos.flush();
-                            }
-                            sb.append(bos.toString());
-                        } catch (IOException ex2) {
-                            //
-                        }
-                        rc.trace(Level.SEVERE, NMsg.ofC("Failed call (%s) : %s", ex, sb.toString()));
-                    }
+                    error = ex;
                     rc.setErrorResponse(ex).sendResponse();
+                } finally {
+                    rc.setTracer(null);
+                    ch.stop();
+                    NDuration duration = ch.getDuration();
+                    if (error == null) {
+                        rc.trace(new NHttpLogMsg()
+                                .setDuration(duration)
+                                .setLevel(Level.INFO)
+                                .setMessage(NMsg.ofC(" Successful call"))
+                        );
+                        for (NHttpLogMsg nMsg : seen) {
+                            rc.trace(nMsg.appendPrefix(prefix));
+                        }
+                    } else {
+                        rc.trace(new NHttpLogMsg()
+                                .setDuration(duration)
+                                .setLevel(Level.SEVERE)
+                                .setMessage(NMsg.ofC("Failed call", error))
+                        );
+                        for (NHttpLogMsg nMsg : seen) {
+                            rc.trace(nMsg.appendPrefix(prefix));
+                        }
+                        if (!isSimpleThrowable(error)) {
+                            rc.error(NMsg.ofC("%s>> Detected error : %s", prefix, NStringUtils.stacktrace(error)));
+                        }
+                    }
                 }
             });
         }
