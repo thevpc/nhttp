@@ -107,7 +107,6 @@ public class NWebCallContextImpl implements NWebCallContext {
         return this;
     }
 
-
     public Map<String, List<String>> getRequestHeaders() {
         Headers rh = httpExchange.getRequestHeaders();
         Map<String, List<String>> map = new HashMap<>();
@@ -230,20 +229,20 @@ public class NWebCallContextImpl implements NWebCallContext {
             return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()), NMsgCodeAware.codeOf(ex).get(), NHttpCode.BAD_REQUEST));
         } else if (ex instanceof NErrorOptionalException) {
             return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()),
-                    NMsgCode.ofCode("Error", ex.getMessage())
-                    , NHttpCode.BAD_REQUEST));
+                    NMsgCode.ofCode("Error", ex.getMessage()),
+                     NHttpCode.BAD_REQUEST));
         } else if (ex instanceof NDetachedErrorOptionalException) {
             return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()),
-                    NMsgCode.ofCode("Error", ex.getMessage())
-                    , NHttpCode.BAD_REQUEST));
+                    NMsgCode.ofCode("Error", ex.getMessage()),
+                     NHttpCode.BAD_REQUEST));
         } else if (ex instanceof NDetachedEmptyOptionalException) {
             return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()),
-                    NMsgCode.ofCode("Not Found")
-                    , NHttpCode.NOT_FOUND));
+                    NMsgCode.ofCode("Not Found"),
+                     NHttpCode.NOT_FOUND));
         } else if (ex instanceof NEmptyOptionalException) {
             return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()),
-                    NMsgCode.ofCode("Not Found")
-                    , NHttpCode.NOT_FOUND));
+                    NMsgCode.ofCode("Not Found"),
+                     NHttpCode.NOT_FOUND));
         } else {
             NOptional<NMsgCode> codeOf = NMsgCodeAware.codeOf(ex);
             if (codeOf.isPresent()) {
@@ -287,7 +286,6 @@ public class NWebCallContextImpl implements NWebCallContext {
         return this;
     }
 
-
     public NWebCallContext sendResponseContent(byte[] bytes) {
         try {
             OutputStream os = httpExchange.getResponseBody();
@@ -311,7 +309,6 @@ public class NWebCallContextImpl implements NWebCallContext {
         }
         return this;
     }
-
 
     public OutputStream getResponseBody() {
         return httpExchange.getResponseBody();
@@ -569,7 +566,8 @@ public class NWebCallContextImpl implements NWebCallContext {
 
 //        byte[] rbBytes = NIOUtils.readBytes(getRequestBody());
 //        InputStream rb = new ByteArrayInputStream(rbBytes);
-//
+//        NPath.of("/home/vpc/aaaa.txt").writeBytes(rbBytes);
+        //String cc = new String(rbBytes);
         InputStream rb = getRequestBody();
 
         try (MixedInputStream br = new MixedInputStream(rb)) {
@@ -663,17 +661,13 @@ public class NWebCallContextImpl implements NWebCallContext {
         NInputSource src = readBinaryPart(br, multipartRequestBoundary);
         byte[] allBytes = src.readBytes();
         if (allBytes.length >= 2) {
-            if (
-                    allBytes[allBytes.length - 2] == 13
-                            && allBytes[allBytes.length - 1] == 10
-            ) {
+            if (allBytes[allBytes.length - 2] == 13
+                    && allBytes[allBytes.length - 1] == 10) {
                 return NInputSource.of(Arrays.copyOfRange(allBytes, 0, allBytes.length - 2));
             }
         } else if (allBytes.length >= 1) {
-            if (
-                    allBytes[allBytes.length - 1] == 13
-                            || allBytes[allBytes.length - 1] == 10
-            ) {
+            if (allBytes[allBytes.length - 1] == 13
+                    || allBytes[allBytes.length - 1] == 10) {
                 return NInputSource.of(Arrays.copyOfRange(allBytes, 0, allBytes.length - 1));
             }
         }
@@ -744,6 +738,7 @@ public class NWebCallContextImpl implements NWebCallContext {
     }
 
     private static class LineAndNewLine {
+
         String line;
         String newLine;
 
@@ -788,7 +783,6 @@ public class NWebCallContextImpl implements NWebCallContext {
             throw new RuntimeException(e);
         }
     }
-
 
     @Override
     public NWebCallContext setTextResponse(String value) {
