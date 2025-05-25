@@ -120,7 +120,7 @@ public class NhttpServerConfigManager implements NBlankable {
     private void parseOneConfItem(NElement child) {
         NOptional<NPairElement> np = child.toNamedPair();
         if (np.isPresent()) {
-            switch (np.get().name()) {
+            switch (np.get().name().orElse("")) {
                 case "users": {
                     for (NElement nElement : np.get().toListContainer().orElseOf(() -> np.get().wrapIntoArray()).get().children()) {
                         NWebUser c = parseUser(nElement).get();
@@ -129,7 +129,7 @@ public class NhttpServerConfigManager implements NBlankable {
                     break;
                 }
                 default: {
-                    throw new NIllegalArgumentException(NMsg.ofC("unexpected config %s", np.get().name()));
+                    throw new NIllegalArgumentException(NMsg.ofC("unexpected config %s", np.get().name().orNull()));
                 }
             }
         } else {
@@ -144,7 +144,7 @@ public class NhttpServerConfigManager implements NBlankable {
         List<Number> numbers = new ArrayList<>();
         NOptional<NPairElement> np = value.toNamedPair();
         if (np.isPresent()) {
-            wu.setUserName(np.get().name());
+            wu.setUserName(np.get().name().orNull());
             value = np.get().value();
         }
         NElement finalValue = value;
@@ -159,7 +159,7 @@ public class NhttpServerConfigManager implements NBlankable {
             } else if (o.isOrdinalNumber()) {
                 numbers.add(o.asNumberValue().get());
             } else if (o.isNamedPair()) {
-                switch (o.asNamed().get().name()) {
+                switch (o.asNamed().get().name().orElse("")) {
                     case "userId": {
                         wu.setUserId(o.asPair().get().value().asStringValue().get());
                         break;
