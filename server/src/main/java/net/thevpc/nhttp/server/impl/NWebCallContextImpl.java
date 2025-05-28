@@ -2,14 +2,9 @@ package net.thevpc.nhttp.server.impl;
 
 import com.sun.net.httpserver.Headers;
 import net.thevpc.nhttp.server.model.DefaultNWebContext;
-import net.thevpc.nuts.NIllegalArgumentException;
+import net.thevpc.nuts.*;
 import net.thevpc.nuts.format.NContentType;
 import net.thevpc.nuts.io.*;
-import net.thevpc.nuts.reserved.optional.NDetachedEmptyOptionalException;
-import net.thevpc.nuts.reserved.optional.NDetachedErrorOptionalException;
-import net.thevpc.nuts.reserved.optional.NEmptyOptionalException;
-import net.thevpc.nuts.reserved.optional.NErrorOptionalException;
-import net.thevpc.nuts.text.NTextStyle;
 import net.thevpc.nuts.time.NChronometer;
 import net.thevpc.nuts.util.*;
 import net.thevpc.nuts.web.NHttpCode;
@@ -24,7 +19,6 @@ import net.thevpc.nhttp.server.util.JsonUtils;
 
 import java.io.*;
 import java.net.URI;
-import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -224,25 +218,33 @@ public class NWebCallContextImpl implements NWebCallContext {
         } else if (ex instanceof SecurityException) {
             return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
         } else if (ex instanceof NMsgCodeException) {
-            return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
+            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).getFormattedMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
         } else if (ex instanceof NMsgCodeAware) {
-            return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()), NMsgCodeAware.codeOf(ex).get(), NHttpCode.BAD_REQUEST));
+            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).getFormattedMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.BAD_REQUEST));
         } else if (ex instanceof NErrorOptionalException) {
-            return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()),
+            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).getFormattedMessage(),
                     NMsgCode.ofCode("Error", ex.getMessage()),
                      NHttpCode.BAD_REQUEST));
         } else if (ex instanceof NDetachedErrorOptionalException) {
-            return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()),
+            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).getFormattedMessage(),
                     NMsgCode.ofCode("Error", ex.getMessage()),
                      NHttpCode.BAD_REQUEST));
         } else if (ex instanceof NDetachedEmptyOptionalException) {
-            return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()),
+            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).getFormattedMessage(),
                     NMsgCode.ofCode("Not Found"),
                      NHttpCode.NOT_FOUND));
         } else if (ex instanceof NEmptyOptionalException) {
-            return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()),
+            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).getFormattedMessage(),
                     NMsgCode.ofCode("Not Found"),
                      NHttpCode.NOT_FOUND));
+        } else if (ex instanceof NDetachedAssertException) {
+            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).getFormattedMessage(),
+                    NMsgCode.ofCode("Failed Assert"),
+                    NHttpCode.BAD_REQUEST));
+        } else if (ex instanceof NAssertException) {
+            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).getFormattedMessage(),
+                    NMsgCode.ofCode("Failed Assert"),
+                    NHttpCode.BAD_REQUEST));
         } else {
             NOptional<NMsgCode> codeOf = NMsgCodeAware.codeOf(ex);
             if (codeOf.isPresent()) {
