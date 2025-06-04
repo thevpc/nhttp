@@ -66,17 +66,16 @@ public class NhttpServerConfigManager implements NBlankable {
         synchronized (users) {
             usersCopy = new ArrayList<>(this.users.values());
         }
-        NElements e = NElements.of();
-        NObjectElement r = e.ofObject(
-                e.ofObjectBuilder("users")
-                        .addComments(e.ofSingleLineComments(
+        NObjectElement r = NElement.ofObject(
+                NElement.ofObjectBuilder("users")
+                        .addComments(NElement.ofSingleLineComments(
                                 "list of users",
                                 "in the following form",
                                 "<userName>(userId:<userName>,password:<password>,...)"
                         ))
                         .addAll(
                                 usersCopy.stream()
-                                        .map(x -> e.ofUpletBuilder(x.getUserName())
+                                        .map(x -> NElement.ofUpletBuilder(x.getUserName())
                                                 .doWith(z -> {
                                                     if (!NBlankable.isBlank(x.getUserId()) && !x.getUserId().equals(x.getUserName())) {
                                                         z.add("userId", x.getUserId());
@@ -91,7 +90,7 @@ public class NhttpServerConfigManager implements NBlankable {
                                                 .build()).collect(Collectors.toList())
                         ).build()
         );
-        e.setValue(r).tson().print(configFile.mkParentDirs());
+        NElementWriter.ofTson().write(r,configFile.mkParentDirs());
     }
 
     public void reload() {
@@ -99,7 +98,7 @@ public class NhttpServerConfigManager implements NBlankable {
             if (configFile.isRegularFile()) {
                 logger.info(NMsg.ofC("reloading config from %s", configFile.toAbsolute().toString()));
                 users.clear();
-                NElement object = NElements.of().tson().parse(configFile);
+                NElement object = NElementParser.ofTson().parse(configFile);
                 if (object != null) {
                     if (object.isObject() || object.isArray()) {
                         for (NElement child : object.asListContainer().get().children()) {

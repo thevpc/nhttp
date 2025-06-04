@@ -168,7 +168,7 @@ public class NWebCallContextImpl implements NWebCallContext {
             }
             return null;
         }
-        return JsonUtils.fromJson(bodyAsString, cl, contentType);
+        return JsonUtils.fromContentType(bodyAsString, cl, contentType);
     }
 
     @Override

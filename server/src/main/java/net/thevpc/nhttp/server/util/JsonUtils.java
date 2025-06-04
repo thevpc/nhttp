@@ -5,6 +5,8 @@ package net.thevpc.nhttp.server.util;
 import com.fatboyindustrial.gsonjavatime.Converters;
 import com.google.gson.GsonBuilder;
 import net.thevpc.nuts.NSession;
+import net.thevpc.nuts.elem.NElementParser;
+import net.thevpc.nuts.elem.NElementWriter;
 import net.thevpc.nuts.elem.NElements;
 import net.thevpc.nuts.format.NContentType;
 
@@ -16,7 +18,7 @@ public class JsonUtils {
 
     public static String toJson(Object object) {
         if (useNuts) {
-            return NElements.of().json().setNtf(false).setValue(object).format().filteredText();
+            return NElementWriter.ofJson().toString(object);
         }
         return getGsonBuilder().setPrettyPrinting().create().toJson(object);
     }
@@ -29,19 +31,19 @@ public class JsonUtils {
 
     public static <T> T fromJson(String json, Class<T> type) {
         if (useNuts) {
-            T r = NElements.of().json().setNtf(false).parse(json, type);
+            T r = NElementParser.ofJson().parse(json, type);
             return r;
         }
         return getGsonBuilder().setPrettyPrinting().create().fromJson(json, type);
     }
 
-    public static <T> T fromJson(String json, Class<T> type, NContentType contentType) {
-        return NElements.of().setContentType(contentType).setNtf(false).parse(json, type);
+    public static <T> T fromContentType(String json, Class<T> type, NContentType contentType) {
+        return NElementParser.of().setContentType(contentType).setNtf(false).parse(json, type);
     }
 
     public static <T> T fromJson(Reader json, Class<T> type) {
         if (useNuts) {
-            T r = NElements.of().json().setNtf(false).parse(json, type);
+            T r = NElementParser.ofJson().parse(json, type);
             return r;
         }
         return getGsonBuilder().setPrettyPrinting().create().fromJson(json, type);
@@ -49,7 +51,7 @@ public class JsonUtils {
 
     public static void toJson(Object object, BufferedWriter r) {
         if (useNuts) {
-            NElements.of().json().setNtf(false).setValue(object).println(r);
+            NElementWriter.ofJson().write(object,r);
         } else {
             getGsonBuilder().setPrettyPrinting().create().toJson(object, r);
         }
