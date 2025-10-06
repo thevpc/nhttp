@@ -1,7 +1,7 @@
 package net.thevpc.nhttp.server.api;
 
 
-import net.thevpc.nuts.NDTO;
+import net.thevpc.nuts.util.NDTO;
 import net.thevpc.nuts.util.NMsgCode;
 
 public class NWebResponseHeaders implements NDTO {
