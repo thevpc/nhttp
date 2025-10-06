@@ -2,7 +2,7 @@ package net.thevpc.nhttp.server.api;
 
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.util.NMsgCode;
-import net.thevpc.nuts.web.NHttpCode;
+import net.thevpc.nuts.net.NHttpCode;
 
 public interface NResponseResource {
     NResponseResource setStringResponse(String value);
