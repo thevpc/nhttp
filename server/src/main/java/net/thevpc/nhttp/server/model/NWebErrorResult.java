@@ -1,6 +1,6 @@
 package net.thevpc.nhttp.server.model;
 
-import net.thevpc.nuts.NDTO;
+import net.thevpc.nuts.util.NDTO;
 import net.thevpc.nuts.util.NMsgCode;
 
 public class NWebErrorResult implements NDTO {
