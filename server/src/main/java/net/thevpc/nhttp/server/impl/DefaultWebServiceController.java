@@ -8,11 +8,11 @@ import net.thevpc.nhttp.server.model.DefaultNWebContext;
 import net.thevpc.nuts.time.NChronometer;
 import net.thevpc.nuts.time.NDuration;
 import net.thevpc.nuts.util.NMsg;
-import net.thevpc.nuts.NSession;
+import net.thevpc.nuts.core.NSession;
 import net.thevpc.nuts.util.NMsgCode;
 import net.thevpc.nuts.util.NMsgCodeException;
 import net.thevpc.nuts.util.NStringUtils;
-import net.thevpc.nuts.web.NHttpCode;
+import net.thevpc.nuts.net.NHttpCode;
 
 import java.util.ArrayList;
 import java.util.List;
