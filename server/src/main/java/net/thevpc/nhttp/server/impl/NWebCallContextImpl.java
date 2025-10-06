@@ -2,13 +2,13 @@ package net.thevpc.nhttp.server.impl;
 
 import com.sun.net.httpserver.Headers;
 import net.thevpc.nhttp.server.model.DefaultNWebContext;
-import net.thevpc.nuts.*;
-import net.thevpc.nuts.format.NContentType;
+import net.thevpc.nuts.concurrent.NUnsafeRunnable;
+import net.thevpc.nuts.text.NContentType;
 import net.thevpc.nuts.io.*;
 import net.thevpc.nuts.time.NChronometer;
 import net.thevpc.nuts.util.*;
-import net.thevpc.nuts.web.NHttpCode;
-import net.thevpc.nuts.web.NHttpMethod;
+import net.thevpc.nuts.net.NHttpCode;
+import net.thevpc.nuts.net.NHttpMethod;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import net.thevpc.nhttp.server.api.*;
