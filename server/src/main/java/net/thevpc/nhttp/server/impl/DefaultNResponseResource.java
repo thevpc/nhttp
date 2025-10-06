@@ -6,7 +6,7 @@
 //import net.thevpc.nuts.util.NBlankable;
 //import net.thevpc.nuts.util.NMsgCode;
 //import net.thevpc.nuts.util.NStringUtils;
-//import net.thevpc.nuts.web.NHttpCode;
+//import net.thevpc.nuts.net.NHttpCode;
 //
 //import java.io.IOException;
 //import java.io.InputStream;
