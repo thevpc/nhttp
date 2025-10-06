@@ -3,7 +3,7 @@ package net.thevpc.nhttp.server.impl;
 import net.thevpc.nhttp.server.api.NWebLogger;
 import net.thevpc.nhttp.server.api.NWebUserBuilder;
 import net.thevpc.nhttp.server.api.NWebUser;
-import net.thevpc.nuts.NIllegalArgumentException;
+import net.thevpc.nuts.util.NIllegalArgumentException;
 import net.thevpc.nuts.elem.*;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.util.*;
