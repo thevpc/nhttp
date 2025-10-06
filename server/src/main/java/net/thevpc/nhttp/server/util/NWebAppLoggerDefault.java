@@ -2,8 +2,8 @@ package net.thevpc.nhttp.server.util;
 
 import net.thevpc.nhttp.server.api.NHttpLogMsg;
 import net.thevpc.nhttp.server.api.NWebLogger;
-import net.thevpc.nuts.NErr;
-import net.thevpc.nuts.NOut;
+import net.thevpc.nuts.io.NErr;
+import net.thevpc.nuts.io.NOut;
 import net.thevpc.nuts.util.NMsg;
 import net.thevpc.nuts.text.NTexts;
 
