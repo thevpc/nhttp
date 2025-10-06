@@ -1,20 +1,19 @@
 package net.thevpc.nhttp.server.api;
 
-import net.thevpc.nuts.format.NContentType;
+import net.thevpc.nuts.text.NContentType;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.util.NMsgCode;
-import net.thevpc.nuts.web.NHttpCode;
-import net.thevpc.nuts.web.NHttpMethod;
+import net.thevpc.nuts.net.NHttpCode;
+import net.thevpc.nuts.net.NHttpMethod;
 import net.thevpc.nuts.util.NMsg;
 import net.thevpc.nuts.util.NOptional;
-import net.thevpc.nuts.util.NUnsafeRunnable;
+import net.thevpc.nuts.concurrent.NUnsafeRunnable;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 
 public interface NWebCallContext extends AutoCloseable {
 
