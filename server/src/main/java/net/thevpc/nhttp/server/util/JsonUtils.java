@@ -4,11 +4,10 @@ package net.thevpc.nhttp.server.util;
 
 import com.fatboyindustrial.gsonjavatime.Converters;
 import com.google.gson.GsonBuilder;
-import net.thevpc.nuts.NSession;
+import net.thevpc.nuts.core.NSession;
 import net.thevpc.nuts.elem.NElementParser;
 import net.thevpc.nuts.elem.NElementWriter;
-import net.thevpc.nuts.elem.NElements;
-import net.thevpc.nuts.format.NContentType;
+import net.thevpc.nuts.text.NContentType;
 
 import java.io.BufferedWriter;
 import java.io.Reader;
