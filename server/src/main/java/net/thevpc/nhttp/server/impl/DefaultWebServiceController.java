@@ -7,10 +7,10 @@ import net.thevpc.nhttp.server.error.NWebUnauthorizedSecurityException;
 import net.thevpc.nhttp.server.model.DefaultNWebContext;
 import net.thevpc.nuts.time.NChronometer;
 import net.thevpc.nuts.time.NDuration;
-import net.thevpc.nuts.util.NMsg;
+import net.thevpc.nuts.text.NMsg;
 import net.thevpc.nuts.core.NSession;
-import net.thevpc.nuts.util.NMsgCode;
-import net.thevpc.nuts.util.NMsgCodeException;
+import net.thevpc.nuts.text.NMsgCode;
+import net.thevpc.nuts.text.NMsgCodeException;
 import net.thevpc.nuts.util.NStringUtils;
 import net.thevpc.nuts.net.NHttpCode;
 
