@@ -2,7 +2,7 @@ package net.thevpc.nhttp.server.util;
 
 import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.util.NLiteral;
-import net.thevpc.nuts.util.NMsg;
+import net.thevpc.nuts.text.NMsg;
 
 import java.util.Map;
 import java.util.concurrent.*;
