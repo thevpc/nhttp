@@ -1,7 +1,7 @@
 package net.thevpc.nhttp.server.error;
 
-import net.thevpc.nuts.util.NMsgCode;
-import net.thevpc.nuts.util.NMsgCodeAware;
+import net.thevpc.nuts.text.NMsgCode;
+import net.thevpc.nuts.text.NMsgCodeAware;
 
 public class NWebUnauthorizedSecurityException extends SecurityException implements NMsgCodeAware {
     private NMsgCode code;
