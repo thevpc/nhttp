@@ -2,10 +2,10 @@ package net.thevpc.nhttp.server.api;
 
 import net.thevpc.nuts.text.NContentType;
 import net.thevpc.nuts.io.NPath;
-import net.thevpc.nuts.util.NMsgCode;
+import net.thevpc.nuts.text.NMsgCode;
 import net.thevpc.nuts.net.NHttpCode;
 import net.thevpc.nuts.net.NHttpMethod;
-import net.thevpc.nuts.util.NMsg;
+import net.thevpc.nuts.text.NMsg;
 import net.thevpc.nuts.util.NOptional;
 import net.thevpc.nuts.concurrent.NUnsafeRunnable;
 
