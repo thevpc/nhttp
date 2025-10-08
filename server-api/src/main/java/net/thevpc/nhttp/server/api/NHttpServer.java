@@ -1,6 +1,6 @@
 package net.thevpc.nhttp.server.api;
 
-import net.thevpc.nuts.util.NMsg;
+import net.thevpc.nuts.text.NMsg;
 
 public interface NHttpServer {
     NMsg getHeader();
