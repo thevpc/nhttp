@@ -1,7 +1,7 @@
 package net.thevpc.nhttp.server.model;
 
 import net.thevpc.nuts.util.NDTO;
-import net.thevpc.nuts.util.NMsgCode;
+import net.thevpc.nuts.text.NMsgCode;
 
 public class NWebErrorResult implements NDTO {
     private boolean error;
