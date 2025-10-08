@@ -4,7 +4,7 @@ import net.thevpc.nhttp.server.api.NHttpLogMsg;
 import net.thevpc.nhttp.server.api.NWebLogger;
 import net.thevpc.nuts.io.NErr;
 import net.thevpc.nuts.io.NOut;
-import net.thevpc.nuts.util.NMsg;
+import net.thevpc.nuts.text.NMsg;
 import net.thevpc.nuts.text.NTexts;
 
 import java.io.*;
