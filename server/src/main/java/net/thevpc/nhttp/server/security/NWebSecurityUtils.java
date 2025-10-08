@@ -1,5 +1,8 @@
 package net.thevpc.nhttp.server.security;
 
+import net.thevpc.nuts.text.NMsg;
+import net.thevpc.nuts.text.NMsgCode;
+import net.thevpc.nuts.text.NMsgCodeException;
 import net.thevpc.nuts.util.*;
 
 import javax.crypto.Cipher;
