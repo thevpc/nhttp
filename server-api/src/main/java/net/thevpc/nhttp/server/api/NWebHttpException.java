@@ -1,9 +1,9 @@
 package net.thevpc.nhttp.server.api;
 
 import net.thevpc.nuts.util.NException;
-import net.thevpc.nuts.util.NMsg;
-import net.thevpc.nuts.util.NMsgCode;
-import net.thevpc.nuts.util.NMsgCodeAware;
+import net.thevpc.nuts.text.NMsg;
+import net.thevpc.nuts.text.NMsgCode;
+import net.thevpc.nuts.text.NMsgCodeAware;
 import net.thevpc.nuts.net.NHttpCode;
 
 public class NWebHttpException extends NException implements NMsgCodeAware {
