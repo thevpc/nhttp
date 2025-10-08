@@ -1,7 +1,7 @@
 package net.thevpc.nhttp.server.api;
 
 import net.thevpc.nuts.io.NPath;
-import net.thevpc.nuts.util.NMsgCode;
+import net.thevpc.nuts.text.NMsgCode;
 import net.thevpc.nuts.net.NHttpCode;
 
 public interface NResponseResource {
