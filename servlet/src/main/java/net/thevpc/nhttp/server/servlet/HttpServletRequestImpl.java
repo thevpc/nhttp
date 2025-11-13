@@ -47,7 +47,7 @@ class HttpServletRequestImpl implements HttpServletRequest {
     @Override
     public long getDateHeader(String s) {
         NLiteral li = NLiteral.of(getHeader(s));
-        if (li.isLong()) {
+        if (li.asLong().isPresent()) {
             return li.asLong().get();
         }
         String ss = li.asString().orNull();
