@@ -6,7 +6,7 @@
     <groupId>net.thevpc.xprojects.builders.nhttp</groupId>
     <artifactId>nhttp-builder</artifactId>
     <name>NHTTP Server Builder</name>
-    <version>0.8.8.0</version>
+    <version>0.8.9.0</version>
     <packaging>pom</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
