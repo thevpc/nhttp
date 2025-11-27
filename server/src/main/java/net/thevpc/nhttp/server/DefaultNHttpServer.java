@@ -295,8 +295,8 @@ public class DefaultNHttpServer implements NHttpServer {
                 .setName("HTTPServer")
                 .setIdlTimeSeconds(effectiveOptions.getIdlTimeSeconds())
                 .setQueueSize(effectiveOptions.getQueueSize())
-                .setMaxConnexions(effectiveOptions.getMaxConnexions())
-                .setMinConnexions(effectiveOptions.getMinConnexions())
+                .setMaxConnections(effectiveOptions.getMaxConnections())
+                .setMinConnections(effectiveOptions.getMinConnections())
                 .build();
         if (bootstrapper != null) {
             bootstrapper.bootstrap(new NWebServerConfig(this));
@@ -453,7 +453,7 @@ public class DefaultNHttpServer implements NHttpServer {
         getLogger().info(NMsg.ofC("      addresses       %s", getLocalIPAddresses()));
         getLogger().info(NMsg.ofC("      port            %s", effectiveOptions.getPort()));
         getLogger().info(NMsg.ofC("      SSL/TLS Mode    %s", effectiveOptions.getTls()));
-        userLogger.info(NMsg.ofC("      connexions      %s-%s", effectiveOptions.getMinConnexions(), effectiveOptions.getMaxConnexions()));
+        userLogger.info(NMsg.ofC("      connections     %s-%s", effectiveOptions.getMinConnections(), effectiveOptions.getMaxConnections()));
         userLogger.info(NMsg.ofC("      idle time (sec) %s", effectiveOptions.getIdlTimeSeconds()));
         userLogger.info(NMsg.ofC("      queue size      %s", effectiveOptions.getQueueSize()));
         userLogger.info(NMsg.ofC("      java-version    %s", System.getProperty("java.version")));
