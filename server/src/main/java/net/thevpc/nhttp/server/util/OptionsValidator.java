@@ -63,13 +63,13 @@ public class OptionsValidator {
         ExecutorBuilder executorBuilder = new ExecutorBuilder()
                 .setIdlTimeSeconds(options.getIdlTimeSeconds())
                 .setQueueSize(options.getQueueSize())
-                .setMaxConnexions(options.getMaxConnexions())
-                .setMinConnexions(options.getMinConnexions())
+                .setMaxConnections(options.getMaxConnections())
+                .setMinConnections(options.getMinConnections())
                 .validateOptions();
 
         options.setIdlTimeSeconds(executorBuilder.getIdlTimeSeconds());
-        options.setMinConnexions(executorBuilder.getMinConnexions());
-        options.setMaxConnexions(executorBuilder.getMaxConnexions());
+        options.setMinConnections(executorBuilder.getMinConnections());
+        options.setMaxConnections(executorBuilder.getMaxConnections());
         options.setQueueSize(executorBuilder.getQueueSize());
         return options;
     }
