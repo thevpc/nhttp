@@ -12,12 +12,12 @@ import java.util.logging.Logger;
 
 public class ExecutorBuilder {
     private static Logger LOG = Logger.getLogger(ExecutorBuilder.class.getName());
-    public static final int DEFAULT_MIN_CONNEXIONS = 1024;
-    public static final int DEFAULT_MAX_CONNEXIONS = 6 * 1024;
+    public static final int DEFAULT_MIN_CONNECTIONS = 1024;
+    public static final int DEFAULT_MAX_CONNECTIONS = 6 * 1024;
     public static final int DEFAULT_QUEUE_SIZE = 10;
     public static final int DEFAULT_IDLE_TIME = 10 * 60;
-    private Integer minConnexions;
-    private Integer maxConnexions;
+    private Integer minConnections;
+    private Integer maxConnections;
     private Integer queueSize;
     private Integer idlTimeSeconds;
     private String name;
@@ -27,8 +27,8 @@ public class ExecutorBuilder {
         if (props == null) {
             return this;
         }
-        this.setMinConnexions(_get(prefix, "minConnexions", props).asInt().orNull());
-        this.setMaxConnexions(_get(prefix, "maxConnexions", props).asInt().orNull());
+        this.setMinConnections(_get(prefix, "minConnections", props).asInt().orNull());
+        this.setMaxConnections(_get(prefix, "maxConnections", props).asInt().orNull());
         this.setQueueSize(_get(prefix, "queueSize", props).asInt().orNull());
         this.setIdlTimeSeconds(_get(prefix, "idleTimeSeconds", props).asInt().orNull());
         return this;
@@ -56,17 +56,17 @@ public class ExecutorBuilder {
 
     public ExecutorBuilder validateOptions() {
         if (
-                (minConnexions == null || minConnexions <= 0)
-                        && (maxConnexions == null || maxConnexions < 0)
+                (minConnections == null || minConnections <= 0)
+                        && (maxConnections == null || maxConnections < 0)
         ) {
-            minConnexions = DEFAULT_MIN_CONNEXIONS;
-            maxConnexions = DEFAULT_MAX_CONNEXIONS;
-        } else if ((minConnexions == null || minConnexions <= 0)) {
-            minConnexions = DEFAULT_MIN_CONNEXIONS;
-        } else if ((maxConnexions == null || maxConnexions <= 0)) {
-            maxConnexions = DEFAULT_MAX_CONNEXIONS;
-        } else if (maxConnexions < minConnexions) {
-            throw new IllegalArgumentException(NMsg.ofC("invalid connexions bounds %s..%s", minConnexions, maxConnexions).toString());
+            minConnections = DEFAULT_MIN_CONNECTIONS;
+            maxConnections = DEFAULT_MAX_CONNECTIONS;
+        } else if ((minConnections == null || minConnections <= 0)) {
+            minConnections = DEFAULT_MIN_CONNECTIONS;
+        } else if ((maxConnections == null || maxConnections <= 0)) {
+            maxConnections = DEFAULT_MAX_CONNECTIONS;
+        } else if (maxConnections < minConnections) {
+            throw new IllegalArgumentException(NMsg.ofC("invalid connections bounds %s..%s", minConnections, maxConnections).toString());
         }
         if (queueSize == null || queueSize <= 0) {
             queueSize = DEFAULT_QUEUE_SIZE;
@@ -83,10 +83,10 @@ public class ExecutorBuilder {
     public ExecutorService build() {
         validateOptions();
         if(false) {
-            //System.out.printf("ThreadPoolExecutor minConnexions=%s maxConnexions=%s idlTimeSeconds=%s queueSize=%s%n", minConnexions, maxConnexions, idlTimeSeconds, queueSize);
+            //System.out.printf("ThreadPoolExecutor minConnections=%s maxConnections=%s idlTimeSeconds=%s queueSize=%s%n", minConnections, maxConnections, idlTimeSeconds, queueSize);
             ThreadPoolExecutor te = new ThreadPoolExecutor(
-                    minConnexions, // core size
-                    maxConnexions, // max size
+                    minConnections, // core size
+                    maxConnections, // max size
                     idlTimeSeconds, // idle timeout
                     TimeUnit.SECONDS,
                     new ArrayBlockingQueue<Runnable>(queueSize),
@@ -140,21 +140,21 @@ public class ExecutorBuilder {
         t.start();
     }
 
-    public Integer getMinConnexions() {
-        return minConnexions;
+    public Integer getMinConnections() {
+        return minConnections;
     }
 
-    public ExecutorBuilder setMinConnexions(Integer minConnexions) {
-        this.minConnexions = minConnexions;
+    public ExecutorBuilder setMinConnections(Integer minConnections) {
+        this.minConnections = minConnections;
         return this;
     }
 
-    public Integer getMaxConnexions() {
-        return maxConnexions;
+    public Integer getMaxConnections() {
+        return maxConnections;
     }
 
-    public ExecutorBuilder setMaxConnexions(Integer maxConnexions) {
-        this.maxConnexions = maxConnexions;
+    public ExecutorBuilder setMaxConnections(Integer maxConnections) {
+        this.maxConnections = maxConnections;
         return this;
     }
 
@@ -177,9 +177,9 @@ public class ExecutorBuilder {
     }
 
     private static class NamedThreadFactory implements ThreadFactory {
-        private static final AtomicInteger poolNumber = new AtomicInteger(DEFAULT_MIN_CONNEXIONS);
+        private static final AtomicInteger poolNumber = new AtomicInteger(DEFAULT_MIN_CONNECTIONS);
         private final ThreadGroup group;
-        private final AtomicInteger threadNumber = new AtomicInteger(DEFAULT_MIN_CONNEXIONS);
+        private final AtomicInteger threadNumber = new AtomicInteger(DEFAULT_MIN_CONNECTIONS);
         private final String namePrefix;
 
         NamedThreadFactory(String namePrefix0) {
