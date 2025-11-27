@@ -7,8 +7,8 @@ public class NWebServerOptions implements Cloneable{
     private boolean ignoreExistingPidFile;
     private Boolean tls;
     private Integer backlog;
-    private Integer minConnexions;
-    private Integer maxConnexions;
+    private Integer minConnections;
+    private Integer maxConnections;
     private Integer queueSize;
     private Integer idlTimeSeconds;
     private String pidFile;
@@ -83,21 +83,21 @@ public class NWebServerOptions implements Cloneable{
         return this;
     }
 
-    public Integer getMinConnexions() {
-        return minConnexions;
+    public Integer getMinConnections() {
+        return minConnections;
     }
 
-    public NWebServerOptions setMinConnexions(Integer minConnexions) {
-        this.minConnexions = minConnexions;
+    public NWebServerOptions setMinConnections(Integer minConnections) {
+        this.minConnections = minConnections;
         return this;
     }
 
-    public Integer getMaxConnexions() {
-        return maxConnexions;
+    public Integer getMaxConnections() {
+        return maxConnections;
     }
 
-    public NWebServerOptions setMaxConnexions(Integer maxConnexions) {
-        this.maxConnexions = maxConnexions;
+    public NWebServerOptions setMaxConnections(Integer maxConnections) {
+        this.maxConnections = maxConnections;
         return this;
     }
 
