@@ -941,7 +941,7 @@ public class NWebCallContextImpl implements NWebCallContext {
                     try {
                         httpExchange.sendResponseHeaders(
                                 ((responseCode == null ? NHttpCode.OK : responseCode))
-                                        .getCode(), file.contentLength()
+                                        .getCode(), file.getContentLength()
                         );
                     } catch (IOException e) {
                         throw new NIOException(e);
