@@ -40,7 +40,7 @@ public class NhttpServerConfigManager implements NBlankable {
     }
 
     public void tryReload() {
-        Instant otherInstant = configFile.lastModifiedInstant();
+        Instant otherInstant = configFile.getLastModifiedInstant();
         if (lastLoaded == null || otherInstant == null || lastLoaded.isBefore(otherInstant)) {
             reload();
         }
@@ -109,7 +109,7 @@ public class NhttpServerConfigManager implements NBlankable {
                         parseOneConfItem(object);
                     }
                 }
-                lastLoaded = configFile.lastModifiedInstant();
+                lastLoaded = configFile.getLastModifiedInstant();
             } else {
                 lastLoaded=null;
                 logger.info(NMsg.ofC("resetting config (config file not found %s)", configFile.toAbsolute().toString()));
