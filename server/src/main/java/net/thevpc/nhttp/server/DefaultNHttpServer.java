@@ -11,12 +11,12 @@ import net.thevpc.nhttp.server.util.NWebAppLoggerDefault;
 import net.thevpc.nhttp.server.util.OptionsValidator;
 import net.thevpc.nuts.app.NApp;
 import net.thevpc.nuts.artifact.NVersion;
-import net.thevpc.nuts.command.NExecCmd;
-import net.thevpc.nuts.core.NWorkspace;
+import net.thevpc.nuts.command.NExec;
 import net.thevpc.nuts.io.NIOException;
 import net.thevpc.nuts.io.NPath;
-import net.thevpc.nuts.platform.NPlatformFamily;
-import net.thevpc.nuts.platform.NPlatformLocation;
+import net.thevpc.nuts.platform.NExecutionEngineFamily;
+import net.thevpc.nuts.platform.NExecutionEngines;
+import net.thevpc.nuts.platform.NExecutionEngineLocation;
 import net.thevpc.nuts.text.NTextStyle;
 import net.thevpc.nuts.log.NLog;
 import net.thevpc.nuts.util.NBlankable;
@@ -153,13 +153,13 @@ public class DefaultNHttpServer implements NHttpServer {
 
     public void genkeypair() {
         NPath storeJks = getStoreJks();
-        List<NPlatformLocation> java = NWorkspace.of().findPlatforms(NPlatformFamily.JAVA).toList();
+        List<NExecutionEngineLocation> java = NExecutionEngines.of().findExecutionEngines(NExecutionEngineFamily.JAVA).toList();
         NPath keyToolOk = null;
-        for (NPlatformLocation j : java) {
+        for (NExecutionEngineLocation j : java) {
             NVersion jVersion = NVersion.of(j.getVersion());
             if (jVersion.compareTo("1.8") >= 0
                     && jVersion.compareTo("1.9") < 0
-                    && "jdk".equals(j.getPackaging())
+                    && NExecutionEngineLocation.JAVA_PRODUCT_JDK.equals(j.getProduct())
             ) {
                 NPath keyTool = NPath.of(j.getPath()).resolve("bin/keytool");
                 if (keyTool.isRegularFile()) {
@@ -170,7 +170,7 @@ public class DefaultNHttpServer implements NHttpServer {
         }
 
         String keytoolCmd = keyToolOk == null ? "keytool" : keyToolOk.toString();
-        NExecCmd elist = NExecCmd.of()
+        NExec elist = NExec.of()
                 .addCommand(
                         keytoolCmd,
                         "-list",
@@ -187,7 +187,7 @@ public class DefaultNHttpServer implements NHttpServer {
             //found
         } else {
             storeJks.mkParentDirs();
-            NExecCmd.of()
+            NExec.of()
                     .system()
                     .addCommand(
                             keytoolCmd,
