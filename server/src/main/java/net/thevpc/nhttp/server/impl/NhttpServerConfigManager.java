@@ -99,7 +99,7 @@ public class NhttpServerConfigManager implements NBlankable {
             if (configFile.isRegularFile()) {
                 logger.info(NMsg.ofC("reloading config from %s", configFile.toAbsolute().toString()));
                 users.clear();
-                NElement object = NElementParser.ofTson().parse(configFile);
+                NElement object = NElementReader.ofTson().read(configFile);
                 if (object != null) {
                     if (object.isObject() || object.isArray()) {
                         for (NElement child : object.asListContainer().get().children()) {
