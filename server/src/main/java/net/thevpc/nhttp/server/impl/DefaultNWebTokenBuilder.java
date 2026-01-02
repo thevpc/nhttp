@@ -27,7 +27,7 @@ public class DefaultNWebTokenBuilder implements NWebTokenBuilder {
         t.getPayload().setSub(user == null ? "" : user.getUserId());
         t.getPayload().setName(user == null ? "" : user.getUserName());
         t.getPayload().setIss(
-                NStringUtils.firstNonBlank(
+                NStringUtils.firstNonBlankTrimmed(
                         context.getWebContext().getDisplayName(),
                         context.getWebContext().getServerName(),
                         "Server"
