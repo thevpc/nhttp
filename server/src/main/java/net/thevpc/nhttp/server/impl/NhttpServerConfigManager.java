@@ -122,7 +122,7 @@ public class NhttpServerConfigManager implements NBlankable {
         if (np.isPresent()) {
             switch (np.get().name().orElse("")) {
                 case "users": {
-                    for (NElement nElement : np.get().toListContainer().orElseOf(() -> np.get().wrapIntoArray()).get().children()) {
+                    for (NElement nElement : np.get().toListContainer().orElseGetOptionalOf(() -> np.get().wrapIntoArray()).get().children()) {
                         NWebUser c = parseUser(nElement).get();
                         addUser(c);
                     }
@@ -149,7 +149,7 @@ public class NhttpServerConfigManager implements NBlankable {
         }
         NElement finalValue = value;
         for (NElement o : value.asListContainer()
-                .orElseOf(() -> finalValue.wrapIntoArray()).get()
+                .orElseGetOptionalOf(() -> finalValue.wrapIntoArray()).get()
                 .children()
         ) {
             if (o.isName()) {
