@@ -13,7 +13,7 @@ public class ServletOutputStreamImpl extends ServletOutputStream {
     private boolean started;
 
     public ServletOutputStreamImpl(OutputStream targetStream, Runnable onStart) {
-        NAssert.requireNonNull(targetStream, "Target OutputStream must not be null");
+        NAssert.requireNamedNonNull(targetStream, "Target OutputStream must not be null");
         this.targetStream = targetStream;
         this.onStart = onStart;
     }
