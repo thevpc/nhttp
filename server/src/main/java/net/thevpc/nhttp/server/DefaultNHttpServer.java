@@ -46,7 +46,7 @@ public class DefaultNHttpServer implements NHttpServer {
     private Long pid = null;
     private File logFile;
     private long logFileMaxSize;
-    private String storeCredentials;
+    private String storeCredential;
     private NMsg header;
     private String defaultLogFile;
     private String defaultPidFile;
@@ -135,18 +135,18 @@ public class DefaultNHttpServer implements NHttpServer {
         }
     }
 
-    public String getStoreCredentials() {
-        return storeCredentials;
+    public String getStoreCredential() {
+        return storeCredential;
     }
 
-    public DefaultNHttpServer setStoreCredentials(String storeCredentials) {
-        this.storeCredentials = storeCredentials;
+    public DefaultNHttpServer setStoreCredential(String storeCredential) {
+        this.storeCredential = storeCredential;
         return this;
     }
 
     private String getValidStorePass() {
-        if (storeCredentials != null && storeCredentials.length() > 0) {
-            return storeCredentials;
+        if (storeCredential != null && storeCredential.length() > 0) {
+            return storeCredential;
         }
         return "abcdef12";
     }
