@@ -48,8 +48,8 @@ public class NhttpServerConfigManager implements NBlankable {
 
     public void addUser(NWebUser user) {
         if (user != null) {
-            NAssert.requireNonBlank(user.getUserId(), "userId");
-            NAssert.requireNonBlank(user.getUserName(), "userName");
+            NAssert.requireNamedNonBlank(user.getUserId(), "userId");
+            NAssert.requireNamedNonBlank(user.getUserName(), "userName");
             synchronized (users) {
                 NWebUser ou = users.get(user.getUserName());
                 if (ou != null) {
