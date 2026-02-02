@@ -160,7 +160,7 @@ class HttpServletResponseImpl implements HttpServletResponse {
     }
 
     private void ensureNotCommitted() {
-        NAssert.requireFalse(isCommitted(), "commit");
+        NAssert.requireNamedFalse(isCommitted(), "commit");
     }
 
     private void doTryCommit() {
