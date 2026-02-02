@@ -12,7 +12,7 @@ public class ServletInputStreamImpl extends ServletInputStream {
     private boolean finished = false;
 
     public ServletInputStreamImpl(InputStream inputStream) {
-        NAssert.requireNonNull(inputStream, "inputStream");
+        NAssert.requireNamedNonNull(inputStream, "inputStream");
         this.inputStream = inputStream;
     }
 
