@@ -70,7 +70,7 @@ public class NWebSecurityUtils {
     }
 
     public static String decryptString(String strToDecrypt, String secret) {
-        NAssert.requireNonBlank(secret,"secret");
+        NAssert.requireNamedNonBlank(secret,"secret");
         try {
             KeyInfo k = createKeyInfo(secret);
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
