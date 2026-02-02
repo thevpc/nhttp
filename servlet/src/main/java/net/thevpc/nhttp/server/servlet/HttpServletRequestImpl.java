@@ -400,7 +400,7 @@ class HttpServletRequestImpl implements HttpServletRequest {
 
     @Override
     public AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletResponse) throws IllegalStateException {
-        NAssert.requireFalse(asyncStarted,"asyncStarted");
+        NAssert.requireNamedFalse(asyncStarted,"asyncStarted");
         asyncStarted=true;
         return startedAsyncContext=new AsyncContextImpl(this, resp);
     }
