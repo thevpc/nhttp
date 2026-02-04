@@ -566,10 +566,6 @@ public class NWebCallContextImpl implements NWebCallContext {
         }
         Map<String, FormDataItem> formData = new LinkedHashMap<>();
 
-//        byte[] rbBytes = NIOUtils.readBytes(getRequestBody());
-//        InputStream rb = new ByteArrayInputStream(rbBytes);
-//        NPath.of("/home/vpc/aaaa.txt").writeBytes(rbBytes);
-        //String cc = new String(rbBytes);
         InputStream rb = getRequestBody();
 
         try (MixedInputStream br = new MixedInputStream(rb)) {
