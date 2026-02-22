@@ -70,8 +70,8 @@ public class NhttpServerConfigManager implements NBlankable {
         NObjectElement r = NElement.ofObject(
                 NElement.ofObjectBuilder("users")
                         .addLeadingComment(NElement.ofLineComment(
-                                "list of users",
-                                "in the following form",
+                                "list of users\n"+
+                                "in the following form\n"+
                                 "<userName>(userId:<userName>,password:<password>,...)"
                         ))
                         .addAll(
