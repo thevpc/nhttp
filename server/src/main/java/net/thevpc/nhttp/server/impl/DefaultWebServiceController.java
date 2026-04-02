@@ -28,7 +28,7 @@ public class DefaultWebServiceController implements HttpHandler {
 
     public void handle(HttpExchange t) {
         try (NWebCallContextImpl rc = new NWebCallContextImpl(webContainer, t)) {
-            NChronometer ch = NChronometer.startNow();
+            NChronometer ch = NChronometer.of();
             NSession.of().runWith(() -> {
                 Throwable error = null;
                 String prefix = "   ";

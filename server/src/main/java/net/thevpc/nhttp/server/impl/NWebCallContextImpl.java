@@ -342,7 +342,7 @@ public class NWebCallContextImpl implements NWebCallContext {
 
     @Override
     public NWebCallContext requireAuth() {
-        NChronometer nChronometer = NChronometer.startNow();
+        NChronometer nChronometer = NChronometer.of();
         List<String> authorization = httpExchange.getRequestHeaders().get("Authorization");
         NWebUser user = null;
         NWebToken token = null;
