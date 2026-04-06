@@ -47,7 +47,7 @@ public class DefaultWebServiceController implements HttpHandler {
                 } finally {
                     rc.setTracer(null);
                     ch.stop();
-                    NDuration duration = ch.getDuration();
+                    NDuration duration = ch.duration();
                     if (error == null) {
                         rc.trace(new NHttpLogMsg()
                                 .setDuration(duration)

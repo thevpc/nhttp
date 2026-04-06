@@ -381,9 +381,9 @@ public class NWebCallContextImpl implements NWebCallContext {
             }
         }
         if (Objects.equals(user.getUserId(), user.getUserName())) {
-            trace(new NHttpLogMsg().setDuration(nChronometer.getDuration()).setLevel(Level.INFO).setMessage(NMsg.ofC("authenticated %s", user.getUserId())));
+            trace(new NHttpLogMsg().setDuration(nChronometer.duration()).setLevel(Level.INFO).setMessage(NMsg.ofC("authenticated %s", user.getUserId())));
         } else {
-            trace(new NHttpLogMsg().setDuration(nChronometer.getDuration()).setLevel(Level.INFO).setMessage(NMsg.ofC("authenticated %s (%s)", user.getUserId(), user.getUserName())));
+            trace(new NHttpLogMsg().setDuration(nChronometer.duration()).setLevel(Level.INFO).setMessage(NMsg.ofC("authenticated %s (%s)", user.getUserId(), user.getUserName())));
         }
         setUser(user);
         setToken(token);
