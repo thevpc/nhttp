@@ -179,10 +179,10 @@ public class DefaultNHttpServer implements NHttpServer {
                         //"-keypass", "abcdef12"
                 )
                 .system()
-                .setSleepMillis(2000)
+                .sleepMillis(2000)
                 .grabAll();
         String outputString = elist.getGrabbedOutString();
-        int result = elist.getResultCode();
+        int result = elist.exitCode();
         if (result == 0) {
             //found
         } else {
