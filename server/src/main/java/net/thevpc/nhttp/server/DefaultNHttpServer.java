@@ -200,7 +200,7 @@ public class DefaultNHttpServer implements NHttpServer {
                             "-dname", "cn=Unknown, ou=Unknown, o=Unknown, c=Unknown",
                             "-storepass", getValidStorePass(),
                             "-keypass", getValidStorePass()
-                    ).failFast()
+                    ).failFast(true)
                     .run();
         }
     }
