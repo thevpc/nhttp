@@ -175,7 +175,7 @@ public class NWebCallContextImpl implements NWebCallContext {
     public String getRequestBodyAsString() {
         if (requestBody == null) {
             try {
-                requestBody = NCp.of().from(httpExchange.getRequestBody()).getByteArrayResult();
+                requestBody = NCp.of().from(httpExchange.getRequestBody()).byteArrayResult();
             } catch (RuntimeException e) {
                 requestBody = new byte[0];
                 throw e;
@@ -943,7 +943,7 @@ public class NWebCallContextImpl implements NWebCallContext {
                         throw new NIOException(e);
                     }
                     responseHeadersSent = true;
-                    try (InputStream is = file.getInputStream()) {
+                    try (InputStream is = file.inputStream()) {
                         this.sendResponseContent(is);
                     } catch (IOException ex) {
                         ex.printStackTrace();

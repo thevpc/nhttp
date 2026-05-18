@@ -206,7 +206,7 @@ public class DefaultNHttpServer implements NHttpServer {
     }
 
     private NPath getStoreJks() {
-        return NApp.of().getVarFolder().resolve("app-store.jks");
+        return NApp.of().varFolder().resolve("app-store.jks");
     }
 
     private NWebLogger fileLogger() {
@@ -378,7 +378,7 @@ public class DefaultNHttpServer implements NHttpServer {
             NPath storeJks = getStoreJks();
             char[] password = getValidStorePass().toCharArray();
             KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(storeJks.getInputStream(), password);
+            ks.load(storeJks.inputStream(), password);
 
             // setup the key manager factory
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
