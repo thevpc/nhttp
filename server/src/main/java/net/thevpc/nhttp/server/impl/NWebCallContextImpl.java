@@ -927,7 +927,7 @@ public class NWebCallContextImpl implements NWebCallContext {
 
                 if (file != null && file.exists() && file.isRegularFile()) {
                     if (NBlankable.isBlank(ct)) {
-                        ct = file.getContentType();
+                        ct = file.contentType();
                         if (NBlankable.isBlank(ct)) {
                             ct = "application/octet-stream";
                         }
@@ -937,7 +937,7 @@ public class NWebCallContextImpl implements NWebCallContext {
                     try {
                         httpExchange.sendResponseHeaders(
                                 ((responseCode == null ? NHttpCode.OK : responseCode))
-                                        .getCode(), file.getContentLength()
+                                        .getCode(), file.contentLength()
                         );
                     } catch (IOException e) {
                         throw new NIOException(e);
@@ -959,7 +959,7 @@ public class NWebCallContextImpl implements NWebCallContext {
                     }
 
                     this.setResponseCode(NHttpCode.NOT_FOUND);
-                    this.setErrorCode(NMsgCode.ofCode("FILE_NOT_FOUND", file == null ? null : file.getName()));
+                    this.setErrorCode(NMsgCode.ofCode("FILE_NOT_FOUND", file == null ? null : file.name()));
                     this.sendResponseHeaders();
                     responseHeadersSent = true;
                     this.sendResponseContent(new byte[0]);
