@@ -218,31 +218,31 @@ public class NWebCallContextImpl implements NWebCallContext {
         } else if (ex instanceof SecurityException) {
             return (new NWebHttpException(NMsg.ofC("%s", ex.getMessage()), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
         } else if (ex instanceof NMsgCodeException) {
-            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).getFormattedMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
+            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).formattedMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.FORBIDDEN));
         } else if (ex instanceof NMsgCodeAware) {
-            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).getFormattedMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.BAD_REQUEST));
+            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).formattedMessage(), NMsgCodeAware.codeOf(ex).get(), NHttpCode.BAD_REQUEST));
         } else if (ex instanceof NErrorOptionalException) {
-            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).getFormattedMessage(),
+            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).formattedMessage(),
                     NMsgCode.ofCode("Error", ex.getMessage()),
                      NHttpCode.BAD_REQUEST));
         } else if (ex instanceof NDetachedErrorOptionalException) {
-            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).getFormattedMessage(),
+            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).formattedMessage(),
                     NMsgCode.ofCode("Error", ex.getMessage()),
                      NHttpCode.BAD_REQUEST));
         } else if (ex instanceof NDetachedEmptyOptionalException) {
-            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).getFormattedMessage(),
+            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).formattedMessage(),
                     NMsgCode.ofCode("Not Found"),
                      NHttpCode.NOT_FOUND));
         } else if (ex instanceof NEmptyOptionalException) {
-            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).getFormattedMessage(),
+            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).formattedMessage(),
                     NMsgCode.ofCode("Not Found"),
                      NHttpCode.NOT_FOUND));
         } else if (ex instanceof NDetachedAssertException) {
-            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).getFormattedMessage(),
+            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).formattedMessage(),
                     NMsgCode.ofCode("Failed Assert"),
                     NHttpCode.BAD_REQUEST));
         } else if (ex instanceof NAssertException) {
-            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).getFormattedMessage(),
+            return (new NWebHttpException(((NAnyFormattedExceptionBase)ex).formattedMessage(),
                     NMsgCode.ofCode("Failed Assert"),
                     NHttpCode.BAD_REQUEST));
         } else {

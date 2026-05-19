@@ -19,6 +19,7 @@ import net.thevpc.nuts.platform.NExecutionEngines;
 import net.thevpc.nuts.platform.NExecutionEngineLocation;
 import net.thevpc.nuts.text.NTextStyle;
 import net.thevpc.nuts.log.NLog;
+import net.thevpc.nuts.time.NDuration;
 import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.text.NMsg;
 import net.thevpc.nuts.util.NStringUtils;
@@ -179,7 +180,7 @@ public class DefaultNHttpServer implements NHttpServer {
                         //"-keypass", "abcdef12"
                 )
                 .system()
-                .sleepMillis(2000)
+                .sleepDuration(NDuration.ofSeconds(2))
                 .grabAll();
         String outputString = elist.getGrabbedOutString();
         int result = elist.exitCode();
