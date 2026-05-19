@@ -157,12 +157,12 @@ public class DefaultNHttpServer implements NHttpServer {
         List<NExecutionEngineLocation> java = NExecutionEngines.of().findExecutionEngines(NExecutionEngineFamily.JAVA).toList();
         NPath keyToolOk = null;
         for (NExecutionEngineLocation j : java) {
-            NVersion jVersion = NVersion.of(j.getVersion());
+            NVersion jVersion = NVersion.of(j.version());
             if (jVersion.compareTo("1.8") >= 0
                     && jVersion.compareTo("1.9") < 0
-                    && NExecutionEngineLocation.JAVA_PRODUCT_JDK.equals(j.getProduct())
+                    && NExecutionEngineLocation.JAVA_PRODUCT_JDK.equals(j.product())
             ) {
-                NPath keyTool = NPath.of(j.getPath()).resolve("bin/keytool");
+                NPath keyTool = NPath.of(j.path()).resolve("bin/keytool");
                 if (keyTool.isRegularFile()) {
                     keyToolOk = keyTool;
                     break;
