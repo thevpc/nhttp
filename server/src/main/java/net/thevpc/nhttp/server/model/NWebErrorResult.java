@@ -15,8 +15,8 @@ public class NWebErrorResult implements NDTO {
     public NWebErrorResult(NMsgCode message) {
         this.error = true;
         this.message = message.toString();
-        this.code = message.getCode();
-        this.params = message.getParams();
+        this.code = message.code();
+        this.params = message.params();
     }
 
     public NWebErrorResult(String message) {

@@ -182,7 +182,7 @@ public class DefaultNHttpServer implements NHttpServer {
                 .system()
                 .sleepDuration(NDuration.ofSeconds(2))
                 .grabAll();
-        String outputString = elist.getGrabbedOutString();
+        String outputString = elist.grabbedOut();
         int result = elist.exitCode();
         if (result == 0) {
             //found

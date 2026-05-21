@@ -15,7 +15,7 @@ public class NWebHttpException extends NException implements NMsgCodeAware {
         this.httpCode = httpCode;
         this.appErrorCode = NMsgCode.ofMessage(
                 message.toString(),
-                appErrorCode == null ? null : appErrorCode.getCode(), appErrorCode == null ? new String[0] : appErrorCode.getParams()
+                appErrorCode == null ? null : appErrorCode.code(), appErrorCode == null ? new String[0] : appErrorCode.params()
         );
     }
 
@@ -23,7 +23,7 @@ public class NWebHttpException extends NException implements NMsgCodeAware {
         return httpCode;
     }
 
-    public NMsgCode getMsgCode() {
+    public NMsgCode msgCode() {
         return appErrorCode;
     }
 }

@@ -858,7 +858,7 @@ public class NWebCallContextImpl implements NWebCallContext {
                 try {
                     httpExchange.sendResponseHeaders(
                             ((responseCode == null ? NHttpCode.OK : responseCode))
-                                    .getCode(), bytes.length
+                                    .code(), bytes.length
                     );
                 } catch (IOException e) {
                     throw new NIOException(e);
@@ -885,7 +885,7 @@ public class NWebCallContextImpl implements NWebCallContext {
                 try {
                     httpExchange.sendResponseHeaders(
                             ((responseCode == null ? NHttpCode.OK : responseCode))
-                                    .getCode(), bytes.length
+                                    .code(), bytes.length
                     );
                 } catch (IOException e) {
                     throw new NIOException(e);
@@ -912,7 +912,7 @@ public class NWebCallContextImpl implements NWebCallContext {
                 try {
                     httpExchange.sendResponseHeaders(
                             ((responseCode == null ? NHttpCode.OK : responseCode))
-                                    .getCode(), bytes.length
+                                    .code(), bytes.length
                     );
                 } catch (IOException e) {
                     throw new NIOException(e);
@@ -937,7 +937,7 @@ public class NWebCallContextImpl implements NWebCallContext {
                     try {
                         httpExchange.sendResponseHeaders(
                                 ((responseCode == null ? NHttpCode.OK : responseCode))
-                                        .getCode(), file.contentLength()
+                                        .code(), file.contentLength()
                         );
                     } catch (IOException e) {
                         throw new NIOException(e);
@@ -952,7 +952,7 @@ public class NWebCallContextImpl implements NWebCallContext {
                     try {
                         httpExchange.sendResponseHeaders(
                                 ((responseCode == null ? NHttpCode.OK : responseCode))
-                                        .getCode(), 0
+                                        .code(), 0
                         );
                     } catch (IOException e) {
                         throw new NIOException(e);
@@ -976,7 +976,7 @@ public class NWebCallContextImpl implements NWebCallContext {
                 try {
                     httpExchange.sendResponseHeaders(
                             (responseCode == null ? NHttpCode.INTERNAL_SERVER_ERROR : responseCode)
-                                    .getCode(), 0
+                                    .code(), 0
                     );
                 } catch (IOException e) {
                     throw new NIOException(e);
@@ -988,18 +988,18 @@ public class NWebCallContextImpl implements NWebCallContext {
             case "throwable": {
                 Throwable th = (Throwable) responseObject;
                 NWebHttpException r = wrapException(th);
-                setErrorCode(r.getMsgCode());
+                setErrorCode(r.msgCode());
                 byte[] bytes = null;
                 String errCt = NStringUtils.firstNonBlank(contentType, "application/json");
                 switch (errCt) {
                     case "application/json": {
-                        bytes = JsonUtils.toJson(new NWebErrorResult(r.getMsgCode())).getBytes();
+                        bytes = JsonUtils.toJson(new NWebErrorResult(r.msgCode())).getBytes();
                         break;
                     }
                     default: {
                         //force
                         errCt = "application/json";
-                        bytes = JsonUtils.toJson(new NWebErrorResult(r.getMsgCode())).getBytes();
+                        bytes = JsonUtils.toJson(new NWebErrorResult(r.msgCode())).getBytes();
                         break;
                     }
                 }
@@ -1008,7 +1008,7 @@ public class NWebCallContextImpl implements NWebCallContext {
                 try {
                     httpExchange.sendResponseHeaders(
                             NUtils.firstNonNull(r.getHttpCode(), responseCode, NHttpCode.INTERNAL_SERVER_ERROR)
-                                    .getCode(), bytes.length
+                                    .code(), bytes.length
                     );
                 } catch (IOException e) {
                     throw new NIOException(e);

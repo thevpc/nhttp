@@ -10,7 +10,7 @@ public class NWebForbiddenSecurityException extends SecurityException implements
         this.code=code;
     }
 
-    public NMsgCode getMsgCode() {
+    public NMsgCode msgCode() {
         return code;
     }
 }

@@ -11,7 +11,7 @@ public class NWebUnauthorizedSecurityException extends SecurityException impleme
         this.code = code;
     }
 
-    public NMsgCode getMsgCode() {
+    public NMsgCode msgCode() {
         return code;
     }
 }

@@ -37,7 +37,7 @@ public class JsonUtils {
     }
 
     public static <T> T fromContentType(String json, Class<T> type, NContentType contentType) {
-        return NElementReader.of().setContentType(contentType).setNtf(false).read(json, type);
+        return NElementReader.of().contentType(contentType).ntf(false).read(json, type);
     }
 
     public static <T> T fromJson(Reader json, Class<T> type) {
