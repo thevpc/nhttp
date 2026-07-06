@@ -320,7 +320,7 @@ public class NWebCallContextImpl implements NWebCallContext {
     public NHttpMethod getMethod() {
         if (method == null) {
             String m = httpExchange.getRequestMethod();
-            switch (NStringUtils.trim(m).toUpperCase()) {
+            switch (NStringUtils.strip(m).toUpperCase()) {
                 case "GET":
                     return method = NHttpMethod.GET;
                 case "POST":
@@ -518,7 +518,7 @@ public class NWebCallContextImpl implements NWebCallContext {
     }
 
     private String normalizeHeaderKey(String key) {
-        return NStringUtils.trim(key).toLowerCase();
+        return NStringUtils.strip(key).toLowerCase();
     }
 
     @Override

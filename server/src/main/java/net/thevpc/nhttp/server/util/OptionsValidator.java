@@ -29,7 +29,7 @@ public class OptionsValidator {
         } else {
             options = options.copy();
         }
-        options.setHostName(NStringUtils.trim(options.getHostName()));
+        options.setHostName(NStringUtils.strip(options.getHostName()));
         if (Objects.equals(options.getHostName(), "*")) {
             options.setHostName(null);
         }

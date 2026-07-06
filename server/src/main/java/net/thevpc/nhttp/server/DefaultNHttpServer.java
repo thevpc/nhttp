@@ -345,7 +345,7 @@ public class DefaultNHttpServer implements NHttpServer {
     private void createHttpServer() {
         try {
             InetSocketAddress addr =
-                    (NBlankable.isBlank(effectiveOptions.getHostName()) || "*".equals(NStringUtils.trim(effectiveOptions.getHostName())))
+                    (NBlankable.isBlank(effectiveOptions.getHostName()) || "*".equals(NStringUtils.strip(effectiveOptions.getHostName())))
                             ? new InetSocketAddress(effectiveOptions.getPort()) :
                             new InetSocketAddress(effectiveOptions.getHostName(), effectiveOptions.getPort());
             server = HttpServer.create(

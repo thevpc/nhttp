@@ -54,7 +54,7 @@ public class NWebServerRunnerServlet implements NWebServerRunner {
             servletContextListener.contextInitialized(new ServletContextEvent(rootContext));
         }
         for (NWebServletConfig servlet : servlets) {
-            String contextPath = NStringUtils.trim(container.getContextPath());
+            String contextPath = NStringUtils.strip(container.getContextPath());
             if(NBlankable.isBlank(contextPath)){
                 contextPath="/";
             }

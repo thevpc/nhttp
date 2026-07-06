@@ -43,7 +43,7 @@ public class DefaultNWebContext implements NWebContext {
     private static long ONE_HOUR = 60 * 60 * 1000;
 
     public DefaultNWebContext(String contextPath, String displayName, NHttpServer nHttpServer) {
-        this.contextPath = NStringUtils.firstNonBlank(NStringUtils.trim(contextPath), "/");
+        this.contextPath = NStringUtils.firstNonBlank(NStringUtils.strip(contextPath), "/");
         this.displayName = NStringUtils.firstNonBlank(displayName, "Path " + contextPath);
         this.initParameters = new HashMap<>();
         this.nHttpServer = nHttpServer;
