@@ -172,7 +172,7 @@ public class DefaultNHttpServer implements NHttpServer {
 
         String keytoolCmd = keyToolOk == null ? "keytool" : keyToolOk.toString();
         NExec elist = NExec.of()
-                .addCommand(
+                .command(
                         keytoolCmd,
                         "-list",
                         "-keystore", storeJks.toString(),
@@ -190,7 +190,7 @@ public class DefaultNHttpServer implements NHttpServer {
             storeJks.mkParentDirs();
             NExec.of()
                     .system()
-                    .addCommand(
+                    .command(
                             keytoolCmd,
                             "-genkeypair",
                             "-keystore", storeJks.toString(),
