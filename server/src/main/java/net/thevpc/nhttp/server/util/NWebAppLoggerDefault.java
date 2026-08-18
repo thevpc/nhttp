@@ -5,14 +5,13 @@ import net.thevpc.nhttp.server.api.NWebLogger;
 import net.thevpc.nuts.io.NErr;
 import net.thevpc.nuts.io.NOut;
 import net.thevpc.nuts.text.NMsg;
-import net.thevpc.nuts.text.NTexts;
+import net.thevpc.nuts.text.NText;
 
 import java.io.*;
 import java.util.logging.Level;
 
 public class NWebAppLoggerDefault implements NWebLogger {
     private PrintStream out;
-    private NTexts txt;
     private File file;
     private File roll1;
     private long maxFileSize = 1024;
@@ -30,7 +29,6 @@ public class NWebAppLoggerDefault implements NWebLogger {
         }
         this.maxFileSize = maxFileSize <= 0 ? Long.MAX_VALUE : maxFileSize;
         this.roll1 = new File(this.file.getParent(), this.file.getName() + ".1");
-        this.txt = NTexts.of();
     }
 
     public File getBaseFile() {
@@ -77,7 +75,7 @@ public class NWebAppLoggerDefault implements NWebLogger {
     }
 
     private void _out(NMsg msg) {
-        String string = txt.of(msg).filteredText();
+        String string = NText.of(msg).filteredText();
         long newBytesCount = string.getBytes().length;
         if (fileSize >= maxFileSize || fileSize + newBytesCount >= maxFileSize) {
             roll();

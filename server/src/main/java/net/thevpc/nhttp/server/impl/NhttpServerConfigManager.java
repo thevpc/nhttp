@@ -76,7 +76,7 @@ public class NhttpServerConfigManager implements NBlankable {
                         ))
                         .addAll(
                                 usersCopy.stream()
-                                        .map(x -> NElement.ofUpletBuilder(x.getUserName())
+                                        .map(x -> NElement.ofTupleBuilder(x.getUserName())
                                                 .doWith(z -> {
                                                     if (!NBlankable.isBlank(x.getUserId()) && !x.getUserId().equals(x.getUserName())) {
                                                         z.add("userId", x.getUserId());
