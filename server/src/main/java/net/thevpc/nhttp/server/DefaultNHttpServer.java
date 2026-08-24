@@ -9,7 +9,7 @@ import net.thevpc.nhttp.server.model.DefaultNWebContext;
 import net.thevpc.nhttp.server.util.ExecutorBuilder;
 import net.thevpc.nhttp.server.util.NWebAppLoggerDefault;
 import net.thevpc.nhttp.server.util.OptionsValidator;
-import net.thevpc.nuts.app.NApp;
+import net.thevpc.nuts.app.NApplication;
 import net.thevpc.nuts.artifact.NVersion;
 import net.thevpc.nuts.command.NExec;
 import net.thevpc.nuts.io.NIOException;
@@ -207,7 +207,7 @@ public class DefaultNHttpServer implements NHttpServer {
     }
 
     private NPath getStoreJks() {
-        return NApp.of().varFolder().resolve("app-store.jks");
+        return NApplication.of().varFolder().resolve("app-store.jks");
     }
 
     private NWebLogger fileLogger() {
