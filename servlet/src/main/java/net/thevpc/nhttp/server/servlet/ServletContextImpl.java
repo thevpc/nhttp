@@ -102,7 +102,7 @@ class ServletContextImpl implements ServletContext {
 
     @Override
     public void log(String msg) {
-        server.getLogger().info(NMsg.ofPlain(msg));
+        server.getLogger().info(NMsg.ofP(msg));
     }
 
     @Override

@@ -406,7 +406,7 @@ public class DefaultNHttpServer implements NHttpServer {
                         params.setSSLParameters(sslParameters);
 
                     } catch (Exception ex) {
-                        userLogger.err(NMsg.ofPlain("Failed to create HTTPS port"));
+                        userLogger.err(NMsg.ofP("Failed to create HTTPS port"));
                     }
                 }
             });

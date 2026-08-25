@@ -368,9 +368,9 @@ public class NWebCallContextImpl implements NWebCallContext {
                 if (ex instanceof NMsgCodeAware) {
                     throw ex;
                 }
-                throw new NMsgCodeException(NMsg.ofPlain(ex.toString()), NMsgCode.ofCode("Security.AuthorizationFailed"), ex);
+                throw new NMsgCodeException(NMsg.ofP(ex.toString()), NMsgCode.ofCode("Security.AuthorizationFailed"), ex);
             } catch (Throwable ex) {
-                throw new NMsgCodeException(NMsg.ofPlain(ex.toString()), NMsgCode.ofCode("Security.AuthorizationFailed"), ex);
+                throw new NMsgCodeException(NMsg.ofP(ex.toString()), NMsgCode.ofCode("Security.AuthorizationFailed"), ex);
             }
         }
         if (user == null) {
