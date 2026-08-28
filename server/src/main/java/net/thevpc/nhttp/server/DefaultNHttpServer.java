@@ -14,9 +14,9 @@ import net.thevpc.nuts.artifact.NVersion;
 import net.thevpc.nuts.command.NExec;
 import net.thevpc.nuts.io.NIOException;
 import net.thevpc.nuts.io.NPath;
-import net.thevpc.nuts.platform.NExecutionEngineFamily;
-import net.thevpc.nuts.platform.NExecutionEngines;
-import net.thevpc.nuts.platform.NExecutionEngineLocation;
+import net.thevpc.nuts.platform.NRuntimeDistributionFamily;
+import net.thevpc.nuts.platform.NRuntimeDistributionManager;
+import net.thevpc.nuts.platform.NRuntimeDistribution;
 import net.thevpc.nuts.text.NTextStyle;
 import net.thevpc.nuts.log.NLog;
 import net.thevpc.nuts.time.NDuration;
@@ -154,13 +154,13 @@ public class DefaultNHttpServer implements NHttpServer {
 
     public void genkeypair() {
         NPath storeJks = getStoreJks();
-        List<NExecutionEngineLocation> java = NExecutionEngines.of().findExecutionEngines(NExecutionEngineFamily.JAVA).toList();
+        List<NRuntimeDistribution> java = NRuntimeDistributionManager.of().findRuntimeDistributions(NRuntimeDistributionFamily.JAVA).toList();
         NPath keyToolOk = null;
-        for (NExecutionEngineLocation j : java) {
+        for (NRuntimeDistribution j : java) {
             NVersion jVersion = NVersion.of(j.version());
             if (jVersion.compareTo("1.8") >= 0
                     && jVersion.compareTo("1.9") < 0
-                    && NExecutionEngineLocation.JAVA_PRODUCT_JDK.equals(j.product())
+                    && NRuntimeDistribution.JAVA_PRODUCT_JDK.equals(j.product())
             ) {
                 NPath keyTool = NPath.of(j.path()).resolve("bin/keytool");
                 if (keyTool.isRegularFile()) {
