@@ -67,7 +67,7 @@ public class NWebServerRunnerServlet implements NWebServerRunner {
             if(url==null){
                 url="";
             }
-            NStringBuilder sb=new NStringBuilder();
+            NStringBuilder sb=NStringBuilder.of();
             sb.append(contextPath.trim());
             if(sb.endsWith("/")){
                 while (url.startsWith("/")){
